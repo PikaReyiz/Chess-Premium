@@ -36,14 +36,14 @@ cursor:pointer;
 <script>
 
 let pieces=[
-"♜","♞","♝","♛","♚","♝","♞","♜",
-"♟","♟","♟","♟","♟","♟","♟","♟",
+"br","bn","bb","bq","bk","bb","bn","br",
+"bp","bp","bp","bp","bp","bp","bp","bp",
 "","","","","","","","",
 "","","","","","","","",
 "","","","","","","","",
 "","","","","","","","",
-"♙","♙","♙","♙","♙","♙","♙","♙",
-"♖","♘","♗","♕","♔","♗","♘","♖"
+"wp","wp","wp","wp","wp","wp","wp","wp",
+"wr","wn","wb","wq","wk","wb","wn","wr"
 ]
 
 let selected=null
@@ -58,7 +58,9 @@ let square=document.createElement("div")
 
 square.className="square "+((Math.floor(i/8)+i)%2==0?"white":"black")
 
-square.innerText=pieces[i]
+if(pieces[i]!=""){
+square.innerHTML="<img src='images/"+pieces[i]+".png' width='50'>"
+}
 
 square.onclick=()=>clickSquare(i)
 
@@ -80,6 +82,27 @@ pieces[i]=pieces[selected]
 pieces[selected]=""
 
 selected=null
+
+function draw(){
+let board=document.getElementById("board")
+board.innerHTML=""
+
+for(let i=0;i<64;i++){
+
+let square=document.createElement("div")
+
+square.className="square "+((Math.floor(i/8)+i)%2==0?"white":"black")
+
+if(pieces[i]!=""){
+square.innerHTML="<img src='images/"+pieces[i]+".png' width='50'>"
+}
+
+square.onclick=()=>clickSquare(i)
+
+board.appendChild(square)
+
+}
+}
 
 draw()
 
