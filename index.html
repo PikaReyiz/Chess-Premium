@@ -14,8 +14,7 @@ body {
     width: 480px;
     height: 480px;
     margin: auto;
-    position: relative;
-    background-image: url('IMG/IMG/chessboard.png');
+    background-image: url('IMG/chessboard.png');
     background-size: cover;
 }
 
@@ -72,23 +71,10 @@ function draw() {
         if (i === selected) square.classList.add("selected");
 
         if (pieces[i] != "") {
-            // Show letters instead of images
-            let symbol = "";
-            switch(pieces[i]) {
-                case "Wp": symbol = url('IMG/IMG/Wp.png'); break;
-                case "Wr": symbol = "♖"; break;
-                case "Wn": symbol = "♘"; break;
-                case "Wb": symbol = "♗"; break;
-                case "Wq": symbol = "♕"; break;
-                case "Wk": symbol = "♔"; break;
-                case "Bp": symbol = "♟"; break;
-                case "Br": symbol = "♜"; break;
-                case "Bn": symbol = "♞"; break;
-                case "Bb": symbol = "♝"; break;
-                case "Bq": symbol = "♛"; break;
-                case "Bk": symbol = "♚"; break;
-            }
-            square.innerText = symbol;
+            let img = document.createElement("img");
+            img.className = "piece";
+            img.src = `IMG/${pieces[i]}.png`;
+            square.appendChild(img);
         }
 
         square.onclick = () => clickSquare(i);
