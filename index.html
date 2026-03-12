@@ -43,12 +43,10 @@ body {
 }
 
 .board {
-    position: relative;
     width: 480px;
     height: 480px;
     background-image: url('IMG/IMG/chessboard.png');
     background-size: cover;
-    background-position: center;
     display: grid;
     grid-template-columns: repeat(8, 60px);
     grid-template-rows: repeat(8, 60px);
@@ -115,7 +113,9 @@ img.piece {
 
 <div class="container">
 <div id="board" class="board"></div>
+
 <div id="powersContainer"></div>
+
 <div id="activePowersContainer">
 <h3>Active Powers</h3>
 </div>
@@ -137,6 +137,7 @@ let pieces = [
 let selected = null;
 let turn = "White";
 let turnCount = 0;
+
 let mode = "move";
 let addPieceType = "Wp";
 
@@ -149,66 +150,75 @@ let currentPowers = [];
 let activePowers = [];
 
 function setMode(m){
+
 mode = m;
 
 if(m==="add"){
 let piece = prompt("Piece code? (Wp,Wn,Wb,Wr,Wq,Wk,Bp,Bn,Bb,Br,Bq,Bk)");
 if(piece) addPieceType = piece;
 }
+
 }
 
 function drawBoard(){
+
 let board = document.getElementById("board");
-board.innerHTML = "";
+board.innerHTML="";
 
 for(let i=0;i<64;i++){
 
 let square = document.createElement("div");
-square.className = "square";
+square.className="square";
 
 if(i===selected) square.classList.add("selected");
 
-if(pieces[i] !== ""){
-let img = document.createElement("img");
-img.className = "piece";
-img.src = `IMG/IMG/${pieces[i]}.png`;
+if(pieces[i]!=""){
+
+let img=document.createElement("img");
+img.className="piece";
+img.src=`IMG/IMG/${pieces[i]}.png`;
+
 square.appendChild(img);
+
 }
 
-square.onclick = () => clickSquare(i);
+square.onclick=()=>clickSquare(i);
+
 board.appendChild(square);
+
 }
 
-document.getElementById("turn").innerText = `Current Turn: ${turn}`;
+document.getElementById("turn").innerText=`Current Turn: ${turn}`;
+
 }
 
 function drawPowers(){
 
-const powersDiv = document.getElementById("powersContainer");
-powersDiv.innerHTML = "";
+let powersDiv=document.getElementById("powersContainer");
+powersDiv.innerHTML="";
 
 currentPowers.forEach((power,index)=>{
 
-const btn = document.createElement("button");
+let btn=document.createElement("button");
 btn.className="power-btn";
 btn.innerText=power.name;
 
-btn.onclick = ()=>{
-pickPower(power,index);
-};
+btn.onclick=()=>pickPower(power,index);
 
 powersDiv.appendChild(btn);
 
 });
 
-const activeDiv = document.getElementById("activePowersContainer");
-activeDiv.innerHTML = "<h3>Active Powers</h3>";
+let activeDiv=document.getElementById("activePowersContainer");
+
+activeDiv.innerHTML="<h3>Active Powers</h3>";
 
 activePowers.forEach(p=>{
 
-const div = document.createElement("div");
+let div=document.createElement("div");
 div.className="active-power";
-div.innerText = `${p.name} (${p.duration} turns left)`;
+div.innerText=`${p.name} (${p.duration} turns left)`;
+
 activeDiv.appendChild(div);
 
 });
@@ -219,6 +229,7 @@ function pickPower(power,index){
 
 activePowers.push({...power});
 currentPowers.splice(index,1);
+
 drawPowers();
 
 }
@@ -226,49 +237,85 @@ drawPowers();
 function clickSquare(i){
 
 if(mode==="remove"){
+
 pieces[i]="";
+
+mode="move";
+
 drawBoard();
+
 return;
+
 }
 
 if(mode==="add"){
+
 if(pieces[i]===""){
+
 pieces[i]=addPieceType;
+
 }
+
+mode="move";
+
 drawBoard();
+
 return;
+
 }
 
 if(mode==="effect"){
-let board = document.getElementById("board").children[i];
-let img = board.querySelector("img");
+
+let board=document.getElementById("board").children[i];
+let img=board.querySelector("img");
+
 if(img){
+
 img.classList.toggle("effect-red");
+
 }
+
+mode="move";
+
 return;
+
 }
 
 if(selected===null){
 
-if(pieces[i]!==""){
+if(pieces[i]!=""){
+
 selected=i;
+
 drawBoard();
+
 }
 
 }else{
 
-pieces[i] = pieces[selected];
-pieces[selected] = "";
-selected = null;
+if(selected===i){
+
+selected=null;
+
+drawBoard();
+
+return;
+
+}
+
+pieces[i]=pieces[selected];
+pieces[selected]="";
+
+selected=null;
 
 turnCount++;
 
 activePowers.forEach(p=>p.duration--);
-activePowers = activePowers.filter(p=>p.duration>0);
+activePowers=activePowers.filter(p=>p.duration>0);
 
 turn = (turn==="White") ? "Black" : "White";
 
-currentPowers = [...powerPool]
+currentPowers=[...powerPool]
 .sort(()=>Math.random()-0.5)
 .slice(0,3);
 
