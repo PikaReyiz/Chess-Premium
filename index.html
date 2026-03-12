@@ -6,7 +6,7 @@
 body {
     font-family: Arial;
     text-align: center;
-    background-color: #0d1117; /* dark GitHub-like background */
+    background-color: #0d1117;
     margin: 0;
     padding: 20px;
 }
@@ -16,8 +16,8 @@ body {
     width: 480px;
     height: 480px;
     margin: auto;
-    background-color: #0d1117; /* fallback dark color */
-    background-image: url('IMG/chessboard.png'); /* your PNG board */
+    background-color: #0d1117;
+    background-image: url('IMG/IMG/chessboard.png');
     background-size: cover;
     background-position: center;
     display: grid;
@@ -51,7 +51,6 @@ img.piece {
 <div id="board" class="board"></div>
 
 <script>
-// Pieces positions
 let pieces = [
     "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
     "Bp","Bp","Bp","Bp","Bp","Bp","Bp","Bp",
@@ -65,7 +64,6 @@ let pieces = [
 
 let selected = null;
 
-// Draw board and pieces
 function draw() {
     let board = document.getElementById("board");
     board.innerHTML = "";
@@ -78,7 +76,7 @@ function draw() {
         if (pieces[i] !== "") {
             let img = document.createElement("img");
             img.className = "piece";
-            img.src = `IMG/${pieces[i]}.png`; // make sure your PNG filenames match exactly
+            img.src = `IMG/IMG/${pieces[i]}.png`;
             square.appendChild(img);
         }
 
@@ -87,10 +85,9 @@ function draw() {
     }
 }
 
-// Handle click
 function clickSquare(i) {
     if (selected === null) {
-        if (pieces[i] !== "") selected = i; // only select a piece
+        if (pieces[i] !== "") selected = i; 
     } else {
         pieces[i] = pieces[selected];
         pieces[selected] = "";
@@ -99,7 +96,6 @@ function clickSquare(i) {
     draw();
 }
 
-// Initial draw
 draw();
 </script>
 
