@@ -72,10 +72,23 @@ function draw() {
         if (i === selected) square.classList.add("selected");
 
         if (pieces[i] != "") {
-            let img = document.createElement("img");
-            img.src = "images/" + pieces[i] + ".png";
-            img.className = "piece";
-            square.appendChild(img);
+            // Show letters instead of images
+            let symbol = "";
+            switch(pieces[i]) {
+                case "wp": symbol = "♙"; break;
+                case "wr": symbol = "♖"; break;
+                case "wn": symbol = "♘"; break;
+                case "wb": symbol = "♗"; break;
+                case "wq": symbol = "♕"; break;
+                case "wk": symbol = "♔"; break;
+                case "bp": symbol = "♟"; break;
+                case "br": symbol = "♜"; break;
+                case "bn": symbol = "♞"; break;
+                case "bb": symbol = "♝"; break;
+                case "bq": symbol = "♛"; break;
+                case "bk": symbol = "♚"; break;
+            }
+            square.innerText = symbol;
         }
 
         square.onclick = () => clickSquare(i);
