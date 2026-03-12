@@ -205,6 +205,14 @@ function pickPower(power, index){
     currentPowers.splice(index,1); // remove from current
     drawPowers();
 }
+    function setMode(m){
+    mode = m;
+
+    if(m==="add"){
+        let piece = prompt("Piece code? (Wp,Wn,Wb,Wr,Wq,Wk,Bp,Bn,Bb,Br,Bq,Bk)");
+        if(piece) addPieceType = piece;
+    }
+}
 
 // --- Handle piece selection and move ---
 function clickSquare(i){
@@ -230,15 +238,26 @@ function clickSquare(i){
             img.classList.toggle("effect-red");
         }
         return;
-    }
-function setMode(m){
-    mode = m;
+    if(selected===null){
+    if(pieces[i]!=="") selected=i;
+}else{
+    pieces[i]=pieces[selected];
+    pieces[selected]="";
+    selected=null;
 
-    if(m==="add"){
-        let piece = prompt("Piece code? (Wp,Wn,Wb,Wr,Wq,Wk,Bp,Bn,Bb,Br,Bq,Bk)");
-        if(piece) addPieceType = piece;
-    }
+    turnCount++;
+
+    activePowers.forEach(p=>p.duration--);
+    activePowers = activePowers.filter(p=>p.duration>0);
+
+    turn = (turn==="White")?"Black":"White";
+
+    currentPowers = [...powerPool].sort(()=>0.5-Math.random()).slice(0,3);
+
+    drawBoard();
+    drawPowers();
 }
+    }
 
 // --- Reset board ---
 document.getElementById("resetBtn").onclick=()=>{
