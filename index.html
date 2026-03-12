@@ -3,27 +3,40 @@
 <head>
 <title>Chess Board</title>
 <style>
-body{
-font-family:Arial;
-text-align:center;
+body {
+    font-family: Arial;
+    text-align: center;
 }
-.board{
-display:grid;
-grid-template-columns:repeat(8,60px);
-width:480px;
-margin:auto;
+
+.board {
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    width: 480px;
+    height: 480px;
+    margin: auto;
+    position: relative;
+    background-image: url('images/chessboard.png');
+    background-size: cover;
 }
-.square{
-width:60px;
-height:60px;
-display:flex;
-align-items:center;
-justify-content:center;
-font-size:30px;
-cursor:pointer;
+
+.square {
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
 }
-.white{background:#eee;}
-.black{background:#777;color:white;}
+
+.square.selected {
+    outline: 2px solid red;
+}
+
+img.piece {
+    width: 50px;
+    height: 50px;
+    user-select: none;
+}
 </style>
 </head>
 
@@ -34,84 +47,56 @@ cursor:pointer;
 <div id="board" class="board"></div>
 
 <script>
+// Piece positions using filenames
+let pieces = [
+    "br","bn","bb","bq","bk","bb","bn","br",
+    "bp","bp","bp","bp","bp","bp","bp","bp",
+    "","","","","","","","",
+    "","","","","","","","",
+    "","","","","","","","",
+    "","","","","","","","",
+    "wp","wp","wp","wp","wp","wp","wp","wp",
+    "wr","wn","wb","wq","wk","wb","wn","wr"
+];
 
-let pieces=[
-"br","bn","bb","bq","bk","bb","bn","br",
-"bp","bp","bp","bp","bp","bp","bp","bp",
-"","","","","","","","",
-"","","","","","","","",
-"","","","","","","","",
-"","","","","","","","",
-"wp","wp","wp","wp","wp","wp","wp","wp",
-"wr","wn","wb","wq","wk","wb","wn","wr"
-]
+let selected = null;
 
-let selected=null
+// Draw the board and pieces
+function draw() {
+    let board = document.getElementById("board");
+    board.innerHTML = "";
 
-function draw(){
-let board=document.getElementById("board")
-board.innerHTML=""
+    for (let i = 0; i < 64; i++) {
+        let square = document.createElement("div");
+        square.className = "square";
+        if (i === selected) square.classList.add("selected");
 
-for(let i=0;i<64;i++){
+        if (pieces[i] != "") {
+            let img = document.createElement("img");
+            img.src = "images/" + pieces[i] + ".png";
+            img.className = "piece";
+            square.appendChild(img);
+        }
 
-let square=document.createElement("div")
-
-square.className="square "+((Math.floor(i/8)+i)%2==0?"white":"black")
-
-if(pieces[i]!=""){
-square.innerHTML="<img src='images/"+pieces[i]+".png' width='50'>"
+        square.onclick = () => clickSquare(i);
+        board.appendChild(square);
+    }
 }
 
-square.onclick=()=>clickSquare(i)
-
-board.appendChild(square)
-
-}
-}
-
-function clickSquare(i){
-
-if(selected===null){
-
-selected=i
-
-}else{
-
-pieces[i]=pieces[selected]
-
-pieces[selected]=""
-
-selected=null
-
-function draw(){
-let board=document.getElementById("board")
-board.innerHTML=""
-
-for(let i=0;i<64;i++){
-
-let square=document.createElement("div")
-
-square.className="square "+((Math.floor(i/8)+i)%2==0?"white":"black")
-
-if(pieces[i]!=""){
-square.innerHTML="<img src='images/"+pieces[i]+".png' width='50'>"
+// Handle piece selection and movement
+function clickSquare(i) {
+    if (selected === null) {
+        if (pieces[i] !== "") selected = i; // only select non-empty squares
+    } else {
+        pieces[i] = pieces[selected];
+        pieces[selected] = "";
+        selected = null;
+    }
+    draw();
 }
 
-square.onclick=()=>clickSquare(i)
-
-board.appendChild(square)
-
-}
-}
-
-draw()
-
-}
-
-}
-
-draw()
-
+// Initial draw
+draw();
 </script>
 
 </body>
