@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<title>Chess Board with Timed Powers</title>
+<title>Chess Board with Manual Powers</title>
 <style>
 body {
     font-family: Arial;
@@ -12,12 +12,17 @@ body {
     color: white;
 }
 
+.container {
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+    gap: 20px;
+}
+
 .board {
     position: relative;
     width: 480px;
     height: 480px;
-    margin: auto;
-    background-color: #0d1117;
     background-image: url('IMG/IMG/chessboard.png');
     background-size: cover;
     background-position: center;
@@ -45,16 +50,31 @@ img.piece {
     user-select: none;
 }
 
-#powers {
-    margin-top: 20px;
+/* Powers styling */
+#powersContainer, #activePowersContainer {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
 }
 
-button {
-    font-size: 14px;
+.power-btn {
+    margin: 5px 0;
     padding: 5px 10px;
     cursor: pointer;
-    margin: 3px;
-    display: block;
+    background-color: #222;
+    border: 1px solid #555;
+    color: white;
+}
+
+.power-btn:hover {
+    background-color: #555;
+}
+
+.active-power {
+    margin: 5px 0;
+    padding: 5px 10px;
+    background-color: #444;
+    border: 1px solid #888;
 }
 </style>
 </head>
@@ -63,10 +83,14 @@ button {
 <h1>Shared Chess Board</h1>
 <h2 id="turn">Current Turn: White</h2>
 <button id="resetBtn">Reset Board</button>
-<div id="board" class="board"></div>
 
-<h3>Powers (appear every 3 turns)</h3>
-<div id="powers"></div>
+<div class="container">
+    <div id="board" class="board"></div>
+    <div id="powersContainer"></div>
+    <div id="activePowersContainer">
+        <h3>Active Powers</h3>
+    </div>
+</div>
 
 <script>
 // --- Chess pieces setup ---
@@ -83,46 +107,32 @@ let pieces = [
 
 let selected = null;
 let turn = "White";
-let turnCount = 0; // total turns taken
+let turnCount = 0;
 
 // --- Powers setup ---
-let powerPool = [
-    { name: "Swap", description: "Swap two random pieces", duration: 0, effect: () => swapPieces() },
-    { name: "Double Move", description: "Move again immediately", duration: 0, effect: () => alert("Double Move!") },
-    { name: "Shield", description: "Protect a piece for 2 turns", duration: 2, effect: () => alert("Shield active!") },
-    { name: "Chaos", description: "Shuffle 5 random pieces", duration: 0, effect: () => chaosPieces() },
-    { name: "Freeze", description: "Opponent skips next turn", duration: 1, effect: () => alert("Opponent frozen!") },
-    { name: "Extra Pawn", description: "Spawn extra pawn", duration: 0, effect: () => alert("Extra Pawn spawned!") }
-];
-
-let activePowers = []; // powers waiting to activate
-let currentPowers = []; // 3 random powers for this turn
-
-// --- Pick powers every 3 turns ---
-function checkPickPowers() {
-    if (turnCount % 3 === 0) { // every 3 turns
-        currentPowers = [...powerPool].sort(() => 0.5 - Math.random()).slice(0,3);
-        drawPowers();
-    } else {
-        currentPowers = [];
-        drawPowers();
-    }
+let powerPool = [];
+// Example: 20+ powers for future expansion
+for(let i=1;i<=20;i++){
+    powerPool.push({name:`Power${i}`, duration:3}); // default 3 turns
 }
 
+let currentPowers = [];
+let activePowers = [];
+
 // --- Draw board ---
-function draw() {
+function drawBoard() {
     let board = document.getElementById("board");
     board.innerHTML = "";
 
-    for (let i = 0; i < 64; i++) {
+    for(let i=0;i<64;i++){
         let square = document.createElement("div");
         square.className = "square";
-        if (i === selected) square.classList.add("selected");
+        if(i===selected) square.classList.add("selected");
 
-        if (pieces[i] !== "") {
+        if(pieces[i]!==""){
             let img = document.createElement("img");
-            img.className = "piece";
-            img.src = `IMG/IMG/${pieces[i]}.png`;
+            img.className="piece";
+            img.src=`IMG/IMG/${pieces[i]}.png`;
             square.appendChild(img);
         }
 
@@ -135,86 +145,63 @@ function draw() {
 
 // --- Draw powers ---
 function drawPowers() {
-    const powersDiv = document.getElementById("powers");
+    const powersDiv = document.getElementById("powersContainer");
     powersDiv.innerHTML = "";
-
-    currentPowers.forEach((power, index) => {
+    currentPowers.forEach((power, index)=>{
         const btn = document.createElement("button");
-        btn.innerText = `${power.name} - ${power.description} ${power.duration>0 ? "(duration "+power.duration+" turns)" : ""}`;
-        btn.disabled = selected===null; // must select piece to use
-        btn.onclick = () => {
-            usePower(power);
+        btn.className="power-btn";
+        btn.innerText = `${power.name}`;
+        btn.onclick = ()=>{
+            pickPower(power, index);
         };
         powersDiv.appendChild(btn);
     });
 
-    // Show active powers
-    activePowers.forEach(power => {
-        const info = document.createElement("div");
-        info.innerText = `${power.name} activates in ${power.duration} turn(s)`;
-        powersDiv.appendChild(info);
+    // Draw active powers
+    const activeDiv = document.getElementById("activePowersContainer");
+    activeDiv.innerHTML = "<h3>Active Powers</h3>";
+    activePowers.forEach(p=>{
+        const div = document.createElement("div");
+        div.className="active-power";
+        div.innerText=`${p.name} (${p.duration} turns left)`;
+        activeDiv.appendChild(div);
     });
 }
 
-// --- Use a power ---
-function usePower(power) {
-    if (power.duration>0) {
-        activePowers.push({...power}); // copy to active
-    } else {
-        power.effect();
-    }
-    currentPowers = [];
+// --- Pick a power ---
+function pickPower(power, index){
+    activePowers.push({...power}); // copy into active powers
+    currentPowers.splice(index,1); // remove from current
     drawPowers();
 }
 
 // --- Handle piece selection and move ---
-function clickSquare(i) {
-    if (selected === null) {
-        if (pieces[i] !== "") selected = i; 
-    } else {
-        pieces[i] = pieces[selected];
-        pieces[selected] = "";
-        selected = null;
+function clickSquare(i){
+    if(selected===null){
+        if(pieces[i]!=="") selected=i;
+    }else{
+        pieces[i]=pieces[selected];
+        pieces[selected]="";
+        selected=null;
 
         turnCount++;
-        // --- Reduce duration of active powers ---
-        activePowers.forEach(p => {
-            p.duration--;
-        });
-        // Trigger powers that reach 0
-        activePowers.filter(p => p.duration<=0).forEach(p => p.effect());
-        activePowers = activePowers.filter(p => p.duration>0);
+        // Reduce active powers duration
+        activePowers.forEach(p=>p.duration--);
+        activePowers = activePowers.filter(p=>p.duration>0);
 
         // Switch turn
         turn = (turn==="White")?"Black":"White";
-        checkPickPowers();
-    }
-    draw();
-}
 
-// --- Example chaotic power functions ---
-function swapPieces() {
-    let a = Math.floor(Math.random()*64);
-    let b = Math.floor(Math.random()*64);
-    let temp = pieces[a];
-    pieces[a] = pieces[b];
-    pieces[b] = temp;
-    alert(`Swapped positions ${a} and ${b}!`);
-}
+        // Pick new powers every turn
+        currentPowers = [...powerPool].sort(()=>0.5-Math.random()).slice(0,3);
 
-function chaosPieces() {
-    for (let i=0;i<5;i++){
-        let a=Math.floor(Math.random()*64);
-        let b=Math.floor(Math.random()*64);
-        let temp = pieces[a];
-        pieces[a] = pieces[b];
-        pieces[b] = temp;
+        drawBoard();
+        drawPowers();
     }
-    alert("Shuffled 5 random pieces!");
 }
 
 // --- Reset board ---
-document.getElementById("resetBtn").onclick = function() {
+document.getElementById("resetBtn").onclick=()=>{
     pieces = [
         "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
         "Bp","Bp","Bp","Bp","Bp","Bp","Bp","Bp",
@@ -227,15 +214,16 @@ document.getElementById("resetBtn").onclick = function() {
     ];
     selected = null;
     turn = "White";
-    turnCount = 0;
-    activePowers = [];
-    currentPowers = [];
-    draw();
-    checkPickPowers();
+    turnCount=0;
+    currentPowers=[];
+    activePowers=[];
+    drawBoard();
+    drawPowers();
 }
 
-draw();
-checkPickPowers();
+// Initial draw
+drawBoard();
+drawPowers();
 </script>
 
 </body>
