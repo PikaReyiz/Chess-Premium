@@ -238,26 +238,30 @@ function clickSquare(i){
             img.classList.toggle("effect-red");
         }
         return;
-    if(selected===null){
-    if(pieces[i]!=="") selected=i;
-}else{
-    pieces[i]=pieces[selected];
-    pieces[selected]="";
-    selected=null;
-
-    turnCount++;
-
-    activePowers.forEach(p=>p.duration--);
-    activePowers = activePowers.filter(p=>p.duration>0);
-
-    turn = (turn==="White")?"Black":"White";
-
-    currentPowers = [...powerPool].sort(()=>0.5-Math.random()).slice(0,3);
-
-    drawBoard();
-    drawPowers();
-}
     }
+
+    // NORMAL MOVE SYSTEM
+    if(selected===null){
+        if(pieces[i]!=="") selected=i;
+    }else{
+        pieces[i]=pieces[selected];
+        pieces[selected]="";
+        selected=null;
+
+        turnCount++;
+
+        activePowers.forEach(p=>p.duration--);
+        activePowers = activePowers.filter(p=>p.duration>0);
+
+        turn = (turn==="White")?"Black":"White";
+
+        currentPowers = [...powerPool].sort(()=>0.5-Math.random()).slice(0,3);
+
+        drawBoard();
+        drawPowers();
+    }
+
+}
 
 // --- Reset board ---
 document.getElementById("resetBtn").onclick=()=>{
