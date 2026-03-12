@@ -6,18 +6,23 @@
 body {
     font-family: Arial;
     text-align: center;
+    background-color: #0d1117; /* dark GitHub-like background */
+    margin: 0;
+    padding: 20px;
 }
 
 .board {
-    background-color: #0d1117;
-    color: white;
-    display: grid;
-    grid-template-columns: repeat(8, 60px);
+    position: relative;
     width: 480px;
     height: 480px;
     margin: auto;
-    background-image: url('IMG/IMG/chessboard.png');
+    background-color: #0d1117; /* fallback dark color */
+    background-image: url('IMG/chessboard.png'); /* your PNG board */
     background-size: cover;
+    background-position: center;
+    display: grid;
+    grid-template-columns: repeat(8, 60px);
+    grid-template-rows: repeat(8, 60px);
 }
 
 .square {
@@ -40,15 +45,13 @@ img.piece {
 }
 </style>
 </head>
-
 <body>
 
-<h1>Shared Chess Board</h1>
-
+<h1 style="color:white;">Shared Chess Board</h1>
 <div id="board" class="board"></div>
 
 <script>
-// Piece positions using filenames
+// Pieces positions
 let pieces = [
     "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
     "Bp","Bp","Bp","Bp","Bp","Bp","Bp","Bp",
@@ -62,7 +65,7 @@ let pieces = [
 
 let selected = null;
 
-// Draw the board and pieces
+// Draw board and pieces
 function draw() {
     let board = document.getElementById("board");
     board.innerHTML = "";
@@ -72,10 +75,10 @@ function draw() {
         square.className = "square";
         if (i === selected) square.classList.add("selected");
 
-        if (pieces[i] != "") {
+        if (pieces[i] !== "") {
             let img = document.createElement("img");
             img.className = "piece";
-            img.src = `IMG/IMG/${pieces[i]}.png`;
+            img.src = `IMG/${pieces[i]}.png`; // make sure your PNG filenames match exactly
             square.appendChild(img);
         }
 
@@ -84,10 +87,10 @@ function draw() {
     }
 }
 
-// Handle piece selection and movement
+// Handle click
 function clickSquare(i) {
     if (selected === null) {
-        if (pieces[i] !== "") selected = i; // only select non-empty squares
+        if (pieces[i] !== "") selected = i; // only select a piece
     } else {
         pieces[i] = pieces[selected];
         pieces[selected] = "";
