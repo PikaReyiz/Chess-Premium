@@ -10,8 +10,6 @@ body {
     margin: 0;
     padding: 20px;
 }
-<h2 id="turn" style="color:white;">Current Turn: White</h2>
-<button id="resetBtn">Reset Board</button>
 
 .board {
     position: relative;
@@ -45,11 +43,26 @@ img.piece {
     height: 50px;
     user-select: none;
 }
+
+#turn {
+    color: white;
+    margin-bottom: 10px;
+}
+
+#resetBtn {
+    margin-bottom: 20px;
+    padding: 5px 15px;
+    font-size: 16px;
+}
 </style>
 </head>
 <body>
 
 <h1 style="color:white;">Shared Chess Board</h1>
+
+<h2 id="turn">Current Turn: White</h2>
+<button id="resetBtn">Reset Board</button>
+
 <div id="board" class="board"></div>
 
 <script>
@@ -65,6 +78,7 @@ let pieces = [
 ];
 
 let selected = null;
+let turn = "White";
 
 function draw() {
     let board = document.getElementById("board");
@@ -85,6 +99,8 @@ function draw() {
         square.onclick = () => clickSquare(i);
         board.appendChild(square);
     }
+
+    document.getElementById("turn").innerText = `Current Turn: ${turn}`;
 }
 
 function clickSquare(i) {
@@ -94,34 +110,12 @@ function clickSquare(i) {
         pieces[i] = pieces[selected];
         pieces[selected] = "";
         selected = null;
+        // Switch turn only after a move
+        turn = (turn === "White") ? "Black" : "White";
     }
     draw();
 }
 
-draw();
-    <script>
-// Turn tracking
-let turn = "White";
-
-// Update draw function to show turn
-const originalDraw = draw; // save original draw
-
-draw = function() {
-    originalDraw(); // call your existing draw
-    document.getElementById("turn").innerText = `Current Turn: ${turn}`;
-}
-
-// Change clickSquare to switch turn
-const originalClick = clickSquare;
-clickSquare = function(i) {
-    originalClick(i); // your current movement logic
-    // Switch turn only if a piece was moved
-    if (selected === null) {
-        turn = (turn === "White") ? "Black" : "White";
-    }
-}
-
-// Reset board button
 document.getElementById("resetBtn").onclick = function() {
     pieces = [
         "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
@@ -137,7 +131,8 @@ document.getElementById("resetBtn").onclick = function() {
     turn = "White";
     draw();
 }
-</script>
+
+draw();
 </script>
 
 </body>
