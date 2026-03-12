@@ -10,6 +10,8 @@ body {
     margin: 0;
     padding: 20px;
 }
+<h2 id="turn" style="color:white;">Current Turn: White</h2>
+<button id="resetBtn">Reset Board</button>
 
 .board {
     position: relative;
@@ -97,6 +99,45 @@ function clickSquare(i) {
 }
 
 draw();
+    <script>
+// Turn tracking
+let turn = "White";
+
+// Update draw function to show turn
+const originalDraw = draw; // save original draw
+
+draw = function() {
+    originalDraw(); // call your existing draw
+    document.getElementById("turn").innerText = `Current Turn: ${turn}`;
+}
+
+// Change clickSquare to switch turn
+const originalClick = clickSquare;
+clickSquare = function(i) {
+    originalClick(i); // your current movement logic
+    // Switch turn only if a piece was moved
+    if (selected === null) {
+        turn = (turn === "White") ? "Black" : "White";
+    }
+}
+
+// Reset board button
+document.getElementById("resetBtn").onclick = function() {
+    pieces = [
+        "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
+        "Bp","Bp","Bp","Bp","Bp","Bp","Bp","Bp",
+        "","","","","","","","",
+        "","","","","","","","",
+        "","","","","","","","",
+        "","","","","","","","",
+        "Wp","Wp","Wp","Wp","Wp","Wp","Wp","Wp",
+        "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
+    ];
+    selected = null;
+    turn = "White";
+    draw();
+}
+</script>
 </script>
 
 </body>
