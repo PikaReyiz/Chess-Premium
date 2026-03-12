@@ -14,7 +14,7 @@ body {
     width: 480px;
     height: 480px;
     margin: auto;
-    background-image: url('IMG/chessboard.png');
+    background-image: url('IMG/IMG/chessboard.png');
     background-size: cover;
 }
 
@@ -73,7 +73,7 @@ function draw() {
         if (pieces[i] != "") {
             let img = document.createElement("img");
             img.className = "piece";
-            img.src = `IMG/${pieces[i]}.png`;
+            img.src = `IMG/IMG/${pieces[i]}.png`;
             square.appendChild(img);
         }
 
