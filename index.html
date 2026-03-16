@@ -2,7 +2,6 @@
 <html>
 <head>
 <title>Chess Board with Manual Powers</title>
-<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -34,7 +33,6 @@
     color:#ff9900;
 }
 
-/* Extra turn button */
 #extraTurnBtn {
     padding: 6px 16px;
     background: #1a2a1a;
@@ -47,7 +45,6 @@
 }
 #extraTurnBtn:hover { background: #223322; }
 
-/* Bottom controls under board */
 .board-wrapper {
     display: flex;
     flex-direction: column;
@@ -79,7 +76,6 @@
 .bottom-btn:hover { background: #222240; border-color: #557; color: #ddd; }
 .bottom-btn.active { background: #553300; border-color: #ff9900; color: #ff9900; }
 
-/* Pulsing tile border effect */
 @keyframes tile-pulse {
     0%   { box-shadow: inset 0 0 0 3px var(--tc), 0 0 6px 1px var(--tc); opacity: 1; }
     50%  { box-shadow: inset 0 0 0 3px var(--tc), 0 0 14px 4px var(--tc); opacity: 0.6; }
@@ -92,7 +88,6 @@
     z-index: 0;
 }
 
-/* highlighted random square flash */
 .square.highlight-flash {
     outline: 3px solid #ff9900;
     background: rgba(255,153,0,0.18);
@@ -145,7 +140,6 @@ img.piece {
     pointer-events: none;
 }
 
-/* ── Power Sidebar ── */
 #powerSidebar {
     width: 220px;
     display: flex;
@@ -207,7 +201,6 @@ img.piece {
     font-style: italic;
 }
 
-/* Power pick modal */
 #powerPickModal {
     display: none;
     position: fixed;
@@ -273,7 +266,6 @@ img.piece {
     color: #ff9900;
 }
 
-/* Color Effect Picker */
 #effectPicker {
     display: none;
     position: fixed;
@@ -460,7 +452,6 @@ img.piece {
 </head>
 <body>
 
-<!-- Color Effect Picker -->
 <div id="effectPicker">
     <h3>Choose a glow color</h3>
     <div class="color-grid" id="colorGrid"></div>
@@ -468,14 +459,12 @@ img.piece {
     <button id="effectCancel" onclick="closeEffectPicker()">Cancel</button>
 </div>
 
-<!-- Power Pick Modal -->
 <div id="powerPickModal">
     <h3 id="powerPickTitle">Choose a Power</h3>
     <div class="pick-subtitle" id="powerPickSubtitle"></div>
     <div id="powerOptions"></div>
 </div>
 
-<!-- Piece Picker Overlay -->
 
 <div id="pickerOverlay" onclick="closePicker()"></div>
 <div id="piecePicker">
@@ -519,9 +508,6 @@ img.piece {
 </div>
 
 <script>
-
-// ── Firebase Setup ────────────────────────────────────────────────────────────
-
 const firebaseConfig = {
     apiKey: "AIzaSyDA1qYhXQbVUNWLZXczXWmHlX6hsAF6LOM",
     authDomain: "chess2premium.firebaseapp.com",
@@ -536,7 +522,6 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const gameRef = db.ref("game");
 
-// ── Local State ───────────────────────────────────────────────────────────────
 
 let pieces = [
     "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
@@ -549,8 +534,8 @@ let pieces = [
     "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
 ];
 
-let effects    = new Map(); // square index → color (piece glow)
-let tileEffects= new Map(); // square index → color (tile pulse)
+let effects    = new Map();
+let tileEffects= new Map(); 
 let selected   = null;
 let turn       = "White";
 let globalMoveCount = 0;
@@ -558,13 +543,12 @@ let activePowers    = [];
 let mode            = "move";
 let addPieceType    = null;
 let extraTurnPending= false;
-let isRemoteUpdate  = false; // prevent feedback loop
+let isRemoteUpdate  = false;
 
 const WHITE_PIECES = ["Wp","Wn","Wb","Wr","Wq","Wk"];
 const BLACK_PIECES = ["Bp","Bn","Bb","Br","Bq","Bk"];
 const PIECE_LABELS = { "p":"Pawn","n":"Knight","b":"Bishop","r":"Rook","q":"Queen","k":"King" };
 
-// ── Firebase Sync Helpers ─────────────────────────────────────────────────────
 
 function serializeState(){
     return {
@@ -591,8 +575,6 @@ function deserializeState(data){
 
     effects     = new Map(Object.entries(data.effects     || {}).map(([k,v]) => [Number(k), v]));
     tileEffects = new Map(Object.entries(data.tileEffects || {}).map(([k,v]) => [Number(k), v]));
-
-    // Rebuild activePowers from IDs
     activePowers = (data.activePowers || []).map(p => {
         let power = ALL_POWERS.find(ap => ap.id === p.powerId);
         if(!power) return null;
@@ -605,7 +587,6 @@ function pushState(){
     gameRef.set(serializeState());
 }
 
-// Listen for remote changes
 gameRef.on("value", snapshot => {
     const data = snapshot.val();
     if(!data) return;
@@ -631,15 +612,6 @@ gameRef.on("value", snapshot => {
     isRemoteUpdate = false;
 });
 
-// ── Power System ──────────────────────────────────────────────────────────────
-
-// =============================================================================
-// HOW TO ADD MORE POWERS:
-// Just add a new object to ALL_POWERS below following this format:
-//   { id:"unique_id", name:"Display Name", effect:"Description of the effect",
-//     activatesAfter: 0,   ← turns before it becomes active (0 = instant)
-//     duration: 2 }        ← how many of that player's turns it stays active
-// =============================================================================
 const ALL_POWERS = [
     { id:"double_move",  name:"Double Move",     effect:"Take two moves next turn instead of one",        activatesAfter:0, duration:1 },
     { id:"shield",       name:"Shield",           effect:"Your pieces cannot be captured this turn",       activatesAfter:0, duration:1 },
@@ -661,7 +633,6 @@ const ALL_POWERS = [
     { id:"timewarp",     name:"Time Warp",        effect:"Undo the opponent's last move",                 activatesAfter:0, duration:1 },
     { id:"adrenaline",   name:"Adrenaline",       effect:"Your king can move 2 squares this turn",        activatesAfter:0, duration:1 },
     { id:"earthquake",   name:"Earthquake",       effect:"All pawns on rank 4 and 5 are displaced",      activatesAfter:1, duration:1 },
-    // ↓ Add your own powers here ↓
 ];
 
 function getThreeRandomPowers(){
@@ -751,9 +722,6 @@ function drawPowerSidebar(){
         });
     });
 }
-
-// ── Color Effect Picker ───────────────────────────────────────────────────────
-
 const EFFECT_COLORS = [
     { name:"Red",    hex:"#ff2222" },
     { name:"Orange", hex:"#ff8800" },
@@ -819,8 +787,6 @@ function selectColor(hex){
     }, 150);
 }
 
-// ── Tile Effect Picker ────────────────────────────────────────────────────────
-
 function openTileEffectPicker(){
     document.getElementById("pickerOverlay").style.display = "block";
     document.getElementById("effectPicker").style.display  = "block";
@@ -841,9 +807,6 @@ function selectTileColor(hex){
         document.getElementById("effectPicker").style.display  = "none";
     }, 150);
 }
-
-// ── Piece Picker ──────────────────────────────────────────────────────────────
-
 function buildPicker(){
     function makeBtn(code){
         let btn = document.createElement("div");
@@ -888,10 +851,7 @@ function selectPickerPiece(code){
         document.getElementById("piecePicker").style.display   = "none";
     }, 200);
 }
-
-// ── Extra Turn ────────────────────────────────────────────────────────────────
-
-let extraTurnPendingLocal = false; // local copy to avoid loop
+let extraTurnPendingLocal = false;
 
 function grantExtraTurn(){
     extraTurnPending = !extraTurnPending;
@@ -911,7 +871,6 @@ function grantExtraTurn(){
     pushState();
 }
 
-// ── Random Square Pickers ─────────────────────────────────────────────────────
 
 function pickRandomSquare(type){
     let candidates = [];
@@ -929,7 +888,6 @@ function pickRandomSquare(type){
     }
 }
 
-// ── Mode Buttons ──────────────────────────────────────────────────────────────
 
 function setModeBtn(active){
     ["btnAdd","btnRemove","btnEffect","btnTileEffect"].forEach(id => {
@@ -947,7 +905,6 @@ function setMode(m){
     if(m === "effect") setModeBtn("effect");
 }
 
-// ── Board ─────────────────────────────────────────────────────────────────────
 
 function drawBoard(){
     let board = document.getElementById("board");
@@ -976,7 +933,6 @@ function drawBoard(){
     document.getElementById("turn").innerText = `Current Turn: ${turn}`;
 }
 
-// ── Click Handler ─────────────────────────────────────────────────────────────
 
 function clickSquare(i){
 
@@ -1015,7 +971,6 @@ function clickSquare(i){
         return;
     }
 
-    // Move mode
     if(selected === null){
         if(pieces[i] !== ""){ selected = i; drawBoard(); }
     } else {
@@ -1054,8 +1009,6 @@ function clickSquare(i){
     }
 }
 
-// ── Reset ─────────────────────────────────────────────────────────────────────
-
 document.getElementById("resetBtn").onclick = () => {
     pieces = [
         "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
@@ -1084,8 +1037,6 @@ document.getElementById("resetBtn").onclick = () => {
     drawPowerSidebar();
     pushState();
 };
-
-// ── Init ──────────────────────────────────────────────────────────────────────
 
 buildEffectPicker();
 buildPicker();
