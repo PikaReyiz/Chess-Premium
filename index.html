@@ -31,9 +31,57 @@
     color:#ff9900;
 }
 
-.effect-glow {
-    /* color set via inline style */
+/* Extra turn button */
+#extraTurnBtn {
+    padding: 6px 16px;
+    background: #1a2a1a;
+    color: #44ff88;
+    border: 1px solid #44ff88;
+    cursor: pointer;
+    font-size: 13px;
+    border-radius: 4px;
+    transition: background 0.15s;
 }
+#extraTurnBtn:hover { background: #223322; }
+
+/* Bottom controls under board */
+.board-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.bottom-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 480px;
+}
+
+.bottom-btn {
+    flex: 1;
+    min-width: 100px;
+    padding: 7px 10px;
+    background: #1a1a2a;
+    color: #aaa;
+    border: 1px solid #334;
+    cursor: pointer;
+    font-size: 12px;
+    border-radius: 4px;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    white-space: nowrap;
+}
+.bottom-btn:hover { background: #222240; border-color: #557; color: #ddd; }
+.bottom-btn.active { background: #553300; border-color: #ff9900; color: #ff9900; }
+
+/* highlighted random square flash */
+.square.highlight-flash {
+    outline: 3px solid #ff9900;
+    background: rgba(255,153,0,0.18);
+}
+
 
 body {
     font-family: Arial;
@@ -430,7 +478,7 @@ img.piece {
 <div class="controls">
     <button class="tool-btn" id="btnAdd" onclick="openPicker()">➕ Add Piece</button>
     <button class="tool-btn" id="btnRemove" onclick="setMode('remove')">🗑 Remove Piece</button>
-    <button class="tool-btn" id="btnEffect" onclick="openEffectPicker()">✨ Color Effect</button>
+    <button id="extraTurnBtn" onclick="grantExtraTurn()">⚡ Extra Turn</button>
 </div>
 
 <h1>Shared Chess Board</h1>
@@ -438,7 +486,15 @@ img.piece {
 <button id="resetBtn">Reset Board</button>
 
 <div class="container">
-    <div id="board" class="board"></div>
+    <div class="board-wrapper">
+        <div id="board" class="board"></div>
+        <div class="bottom-controls">
+            <button class="bottom-btn" id="btnEffect" onclick="openEffectPicker()">✨ Color Effect</button>
+            <button class="bottom-btn" onclick="pickRandomSquare('empty')">🎲 Random Empty</button>
+            <button class="bottom-btn" onclick="pickRandomSquare('occupied')">🎲 Random Piece</button>
+            <button class="bottom-btn" onclick="pickRandomSquare('any')">🎲 Random Any</button>
+        </div>
+    </div>
     <div id="powerSidebar">
         <h3>Active Powers</h3>
         <div id="activePowersList"><span class="no-powers-msg">No powers yet</span></div>
@@ -736,12 +792,47 @@ function selectPickerPiece(code){
     }, 200);
 }
 
+// ── Extra Turn ────────────────────────────────────────────────────────────────
+
+function grantExtraTurn(){
+    // Flip the current turn WITHOUT touching globalMoveCount or power timers
+    turn = (turn === "White") ? "Black" : "White";
+    drawBoard();
+    // briefly flash the button to confirm
+    let btn = document.getElementById("extraTurnBtn");
+    btn.style.background = "#334433";
+    setTimeout(() => btn.style.background = "", 300);
+}
+
+// ── Random Square Pickers ─────────────────────────────────────────────────────
+
+function pickRandomSquare(type){
+    let candidates = [];
+    for(let i = 0; i < 64; i++){
+        if(type === "empty"    && pieces[i] === "") candidates.push(i);
+        if(type === "occupied" && pieces[i] !== "") candidates.push(i);
+        if(type === "any")                          candidates.push(i);
+    }
+    if(candidates.length === 0) return;
+
+    let pick = candidates[Math.floor(Math.random() * candidates.length)];
+
+    // Flash highlight on the picked square
+    let boardEl = document.getElementById("board");
+    let sq = boardEl.children[pick];
+    if(sq){
+        sq.classList.add("highlight-flash");
+        setTimeout(() => sq.classList.remove("highlight-flash"), 1200);
+    }
+}
+
 // ── Mode Buttons ──────────────────────────────────────────────────────────────
 
 function setModeBtn(active){
-    ["btnAdd","btnRemove","btnEffect"].forEach(id => {
+    ["btnAdd","btnRemove"].forEach(id => {
         document.getElementById(id).classList.remove("active");
     });
+    document.getElementById("btnEffect").classList.remove("active");
     if(active === "add")    document.getElementById("btnAdd").classList.add("active");
     if(active === "remove") document.getElementById("btnRemove").classList.add("active");
     if(active === "effect") document.getElementById("btnEffect").classList.add("active");
