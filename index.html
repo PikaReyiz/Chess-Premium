@@ -794,14 +794,24 @@ function selectPickerPiece(code){
 
 // ── Extra Turn ────────────────────────────────────────────────────────────────
 
+// When true, the next completed move will NOT switch turns, NOT increment
+// globalMoveCount, and NOT tick powers — giving the same player another move.
+let extraTurnPending = false;
+
 function grantExtraTurn(){
-    // Flip the current turn WITHOUT touching globalMoveCount or power timers
-    turn = (turn === "White") ? "Black" : "White";
-    drawBoard();
-    // briefly flash the button to confirm
+    extraTurnPending = !extraTurnPending; // toggle so you can cancel it too
     let btn = document.getElementById("extraTurnBtn");
-    btn.style.background = "#334433";
-    setTimeout(() => btn.style.background = "", 300);
+    if(extraTurnPending){
+        btn.style.background = "#1a3a1a";
+        btn.style.borderColor = "#44ff88";
+        btn.style.color = "#44ff88";
+        btn.innerText = "⚡ Extra Turn (ON)";
+    } else {
+        btn.style.background = "";
+        btn.style.borderColor = "";
+        btn.style.color = "";
+        btn.innerText = "⚡ Extra Turn";
+    }
 }
 
 // ── Random Square Pickers ─────────────────────────────────────────────────────
@@ -931,16 +941,27 @@ function clickSquare(i){
         pieces[selected] = "";
         selected = null;
 
-        // Track whose turn just completed before switching
         let justMoved = turn;
-        globalMoveCount++;
 
-        tickPowers(justMoved);
-        turn = (justMoved === "White") ? "Black" : "White";
-
-        drawBoard();
-        drawPowerSidebar();
-        checkForPowerUnlock(justMoved);
+        if(extraTurnPending){
+            // Burn the extra turn: same player goes again, nothing else changes
+            extraTurnPending = false;
+            let btn = document.getElementById("extraTurnBtn");
+            btn.style.background = "";
+            btn.style.borderColor = "";
+            btn.style.color = "";
+            btn.innerText = "⚡ Extra Turn";
+            drawBoard();
+            drawPowerSidebar();
+        } else {
+            // Normal move: increment counter, tick powers, switch turn
+            globalMoveCount++;
+            tickPowers(justMoved);
+            turn = (justMoved === "White") ? "Black" : "White";
+            drawBoard();
+            drawPowerSidebar();
+            checkForPowerUnlock(justMoved);
+        }
     }
 }
 
@@ -957,6 +978,10 @@ document.getElementById("resetBtn").onclick = () => {
         "Wp","Wp","Wp","Wp","Wp","Wp","Wp","Wp",
         "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
     ];
+    extraTurnPending = false;
+    let etBtn = document.getElementById("extraTurnBtn");
+    etBtn.style.background = ""; etBtn.style.borderColor = ""; etBtn.style.color = "";
+    etBtn.innerText = "⚡ Extra Turn";
     effects = new Map();
     selected = null;
     turn = "White";
