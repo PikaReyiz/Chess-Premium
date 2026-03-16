@@ -31,8 +31,8 @@
     color:#ff9900;
 }
 
-.effect-red{
-    filter: drop-shadow(0 0 6px red) drop-shadow(0 0 3px red);
+.effect-glow {
+    /* color set via inline style */
 }
 
 body {
@@ -81,33 +81,225 @@ img.piece {
     pointer-events: none;
 }
 
-#powersContainer, #activePowersContainer {
+/* ── Power Sidebar ── */
+#powerSidebar {
+    width: 220px;
     display: flex;
     flex-direction: column;
-    align-items: flex-start;
+    gap: 10px;
+    font-family: Arial;
 }
 
-.power-btn {
-    margin: 5px 0;
-    padding: 5px 10px;
+#powerSidebar h3 {
+    margin: 0 0 6px 0;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    color: #888;
+    border-bottom: 1px solid #333;
+    padding-bottom: 6px;
+}
+
+.active-power-card {
+    background: #111722;
+    border: 1px solid #2a3040;
+    border-left: 3px solid #555;
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 12px;
+    line-height: 1.6;
+}
+
+.active-power-card.white-power { border-left-color: #e8e8e8; }
+.active-power-card.black-power { border-left-color: #888; }
+.active-power-card.pending     { border-left-color: #ff9900; opacity: 0.7; }
+
+.power-card-name {
+    font-size: 13px;
+    font-weight: bold;
+    color: #ddd;
+    margin-bottom: 2px;
+}
+
+.power-card-effect {
+    color: #999;
+    font-size: 11px;
+    margin-bottom: 4px;
+}
+
+.power-card-timer {
+    font-size: 11px;
+    color: #aaa;
+}
+
+.power-card-timer span {
+    font-weight: bold;
+    color: #ff9900;
+}
+
+.no-powers-msg {
+    color: #444;
+    font-size: 12px;
+    font-style: italic;
+}
+
+/* Power pick modal */
+#powerPickModal {
+    display: none;
+    position: fixed;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    background: #13181f;
+    border: 2px solid #334;
+    border-radius: 12px;
+    padding: 24px;
+    z-index: 1000;
+    box-shadow: 0 0 60px rgba(0,0,0,0.9);
+    min-width: 320px;
+    max-width: 380px;
+}
+
+#powerPickModal h3 {
+    margin: 0 0 6px 0;
+    font-size: 15px;
+    color: #fff;
+    text-align: center;
+}
+
+#powerPickModal .pick-subtitle {
+    text-align: center;
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 18px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.power-option {
+    background: #1a2030;
+    border: 2px solid #2a3040;
+    border-radius: 8px;
+    padding: 12px 14px;
+    margin-bottom: 10px;
     cursor: pointer;
-    background-color: #222;
-    border: 1px solid #555;
+    transition: border-color 0.15s, background 0.15s;
+}
+
+.power-option:hover {
+    background: #222d40;
+    border-color: #ff9900;
+}
+
+.power-option-name {
+    font-size: 14px;
+    font-weight: bold;
+    color: #eee;
+    margin-bottom: 4px;
+}
+
+.power-option-desc {
+    font-size: 12px;
+    color: #888;
+    line-height: 1.4;
+}
+
+.power-option-duration {
+    margin-top: 6px;
+    font-size: 11px;
+    color: #ff9900;
+}
+
+/* Color Effect Picker */
+#effectPicker {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: #1a1f2e;
+    border: 2px solid #556;
+    border-radius: 10px;
+    padding: 20px;
+    z-index: 1000;
+    box-shadow: 0 0 40px rgba(0,0,0,0.8);
+    min-width: 260px;
+}
+
+#effectPicker h3 {
+    margin: 0 0 15px 0;
+    color: #ccc;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+}
+
+.color-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 8px;
+    margin-bottom: 10px;
+}
+
+.color-swatch {
+    width: 52px;
+    height: 52px;
+    border-radius: 8px;
+    border: 3px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: rgba(255,255,255,0.85);
+    text-shadow: 0 1px 3px rgba(0,0,0,0.8);
+    transition: border-color 0.15s, transform 0.1s;
+}
+
+.color-swatch:hover {
+    transform: scale(1.08);
+    border-color: white;
+}
+
+.color-swatch.selected-color {
+    border-color: white;
+    transform: scale(1.08);
+}
+
+.remove-swatch {
+    width: 100%;
+    padding: 8px;
+    margin-top: 4px;
+    background: #2a2a2a;
+    border: 2px dashed #666;
+    border-radius: 8px;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 13px;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.remove-swatch:hover {
+    background: #333;
+    border-color: #aaa;
     color: white;
 }
 
-.power-btn:hover {
-    background-color: #555;
+#effectCancel {
+    margin-top: 10px;
+    padding: 6px 20px;
+    background: #333;
+    color: #aaa;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 13px;
+    width: 100%;
 }
 
-.active-power {
-    margin: 5px 0;
-    padding: 5px 10px;
-    background-color: #444;
-    border: 1px solid #888;
-}
+#effectCancel:hover { background: #444; }
 
-/* Piece picker panel */
+
 #piecePicker {
     display: none;
     position: fixed;
@@ -204,7 +396,23 @@ img.piece {
 </head>
 <body>
 
+<!-- Color Effect Picker -->
+<div id="effectPicker">
+    <h3>Choose a glow color</h3>
+    <div class="color-grid" id="colorGrid"></div>
+    <button class="remove-swatch" onclick="selectColor(null)">🚫 Remove Effect</button>
+    <button id="effectCancel" onclick="closeEffectPicker()">Cancel</button>
+</div>
+
+<!-- Power Pick Modal -->
+<div id="powerPickModal">
+    <h3 id="powerPickTitle">Choose a Power</h3>
+    <div class="pick-subtitle" id="powerPickSubtitle"></div>
+    <div id="powerOptions"></div>
+</div>
+
 <!-- Piece Picker Overlay -->
+
 <div id="pickerOverlay" onclick="closePicker()"></div>
 <div id="piecePicker">
     <h3>Select a piece to place</h3>
@@ -222,7 +430,7 @@ img.piece {
 <div class="controls">
     <button class="tool-btn" id="btnAdd" onclick="openPicker()">➕ Add Piece</button>
     <button class="tool-btn" id="btnRemove" onclick="setMode('remove')">🗑 Remove Piece</button>
-    <button class="tool-btn" id="btnEffect" onclick="setMode('effect')">✨ Color Effect</button>
+    <button class="tool-btn" id="btnEffect" onclick="openEffectPicker()">✨ Color Effect</button>
 </div>
 
 <h1>Shared Chess Board</h1>
@@ -231,9 +439,9 @@ img.piece {
 
 <div class="container">
     <div id="board" class="board"></div>
-    <div id="powersContainer"></div>
-    <div id="activePowersContainer">
+    <div id="powerSidebar">
         <h3>Active Powers</h3>
+        <div id="activePowersList"><span class="no-powers-msg">No powers yet</span></div>
     </div>
 </div>
 
@@ -250,8 +458,8 @@ let pieces = [
     "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
 ];
 
-// Persistent effects: set of square indices with red glow
-let effects = new Set();
+// Persistent effects: Map of square index → color string
+let effects = new Map();
 
 let selected = null;
 let turn = "White";
@@ -266,15 +474,212 @@ const PIECE_LABELS  = {
     "p":"Pawn","n":"Knight","b":"Bishop","r":"Rook","q":"Queen","k":"King"
 };
 
-let powerPool = [];
-for(let i=1;i<=20;i++){
-    powerPool.push({name:`Power${i}`, duration:3});
-}
+// ── Power System ──────────────────────────────────────────────────────────────
 
-let currentPowers = [];
+// All available powers with name, effect description, activatesAfter (turns delay), duration (turns active)
+const ALL_POWERS = [
+    { id:"double_move",  name:"Double Move",     effect:"Take two moves next turn instead of one",        activatesAfter:0, duration:1 },
+    { id:"shield",       name:"Shield",           effect:"Your pieces cannot be captured this turn",       activatesAfter:0, duration:1 },
+    { id:"ghost",        name:"Ghost",            effect:"One of your pieces can pass through others",     activatesAfter:0, duration:2 },
+    { id:"freeze",       name:"Freeze",           effect:"One enemy piece cannot move for 2 turns",       activatesAfter:1, duration:2 },
+    { id:"resurrect",    name:"Resurrect",        effect:"Bring back a captured pawn",                    activatesAfter:1, duration:1 },
+    { id:"swap",         name:"Swap",             effect:"Swap any two of your pieces on the board",      activatesAfter:0, duration:1 },
+    { id:"blitz",        name:"Blitz",            effect:"Move any piece twice in one turn",              activatesAfter:0, duration:1 },
+    { id:"fortify",      name:"Fortify",          effect:"A chosen piece cannot be captured for 3 turns", activatesAfter:0, duration:3 },
+    { id:"plague",       name:"Plague",           effect:"Enemy pieces adjacent to yours lose 1 move",    activatesAfter:1, duration:2 },
+    { id:"oracle",       name:"Oracle",           effect:"See your opponent's next planned move",         activatesAfter:0, duration:1 },
+    { id:"teleport",     name:"Teleport",         effect:"Move one piece to any empty square",            activatesAfter:0, duration:1 },
+    { id:"mirror",       name:"Mirror",           effect:"Copy the last power your opponent used",        activatesAfter:0, duration:1 },
+    { id:"slow",         name:"Slow Field",       effect:"Opponent can only move pawns next turn",        activatesAfter:1, duration:1 },
+    { id:"reinforce",    name:"Reinforce",        effect:"Add an extra pawn to any empty square",         activatesAfter:0, duration:1 },
+    { id:"hex",          name:"Hex",              effect:"One enemy piece moves randomly next turn",      activatesAfter:1, duration:1 },
+    { id:"bloodlust",    name:"Bloodlust",        effect:"Captured pieces grant +1 extra move this turn", activatesAfter:0, duration:2 },
+    { id:"cloak",        name:"Cloak",            effect:"Your back row is hidden from opponent",         activatesAfter:0, duration:2 },
+    { id:"timewarp",     name:"Time Warp",        effect:"Undo the opponent's last move",                 activatesAfter:0, duration:1 },
+    { id:"adrenaline",   name:"Adrenaline",       effect:"Your king can move 2 squares this turn",        activatesAfter:0, duration:1 },
+    { id:"earthquake",   name:"Earthquake",       effect:"All pawns on rank 4 and 5 are displaced",      activatesAfter:1, duration:1 },
+];
+
+// whiteTurnCount / blackTurnCount — each increments when that player completes a move
+let whiteTurnCount = 0;
+let blackTurnCount = 0;
+
+// activePowers: array of { power, owner:"White"|"Black", turnsUntilActive, turnsRemaining }
 let activePowers = [];
 
-// ── Piece Picker ─────────────────────────────────────────────────────────────
+// pendingPickFor: "White"|"Black"|null — if set, a pick modal is open
+let pendingPickFor = null;
+
+function getThreeRandomPowers(){
+    return [...ALL_POWERS].sort(() => Math.random()-0.5).slice(0,3);
+}
+
+function checkForPowerUnlock(){
+    // White gets a pick on their 3rd, 6th, 9th... turn
+    if(turn === "White" && whiteTurnCount > 0 && whiteTurnCount % 3 === 0){
+        openPowerPick("White");
+        return;
+    }
+    // Black gets a pick on their 3rd, 6th, 9th... turn
+    if(turn === "Black" && blackTurnCount > 0 && blackTurnCount % 3 === 0){
+        openPowerPick("Black");
+        return;
+    }
+}
+
+function openPowerPick(player){
+    pendingPickFor = player;
+    let options = getThreeRandomPowers();
+    document.getElementById("powerPickTitle").innerText = `${player}'s Power Pick`;
+    document.getElementById("powerPickSubtitle").innerText = `Turn ${player === "White" ? whiteTurnCount : blackTurnCount} — choose one`;
+    let optDiv = document.getElementById("powerOptions");
+    optDiv.innerHTML = "";
+    options.forEach(p => {
+        let card = document.createElement("div");
+        card.className = "power-option";
+        card.innerHTML = `
+            <div class="power-option-name">${p.name}</div>
+            <div class="power-option-desc">${p.effect}</div>
+            <div class="power-option-duration">${p.activatesAfter > 0 ? `Activates in ${p.activatesAfter} turn${p.activatesAfter>1?'s':''} · ` : ''}Active for ${p.duration} turn${p.duration>1?'s':''}</div>
+        `;
+        card.onclick = () => pickPower(p, player);
+        optDiv.appendChild(card);
+    });
+    document.getElementById("pickerOverlay").style.display = "block";
+    document.getElementById("powerPickModal").style.display = "block";
+}
+
+function pickPower(power, player){
+    activePowers.push({
+        power: power,
+        owner: player,
+        turnsUntilActive: power.activatesAfter,
+        turnsRemaining: power.duration
+    });
+    document.getElementById("pickerOverlay").style.display = "none";
+    document.getElementById("powerPickModal").style.display = "none";
+    pendingPickFor = null;
+    drawPowerSidebar();
+}
+
+function tickPowers(justMovedPlayer){
+    // Tick down powers owned by the player who just moved
+    activePowers.forEach(p => {
+        if(p.owner !== justMovedPlayer) return;
+        if(p.turnsUntilActive > 0){
+            p.turnsUntilActive--;
+        } else {
+            p.turnsRemaining--;
+        }
+    });
+    activePowers = activePowers.filter(p => p.turnsRemaining > 0 || p.turnsUntilActive > 0);
+}
+
+function drawPowerSidebar(){
+    let list = document.getElementById("activePowersList");
+    list.innerHTML = "";
+
+    if(activePowers.length === 0){
+        list.innerHTML = '<span class="no-powers-msg">No powers yet</span>';
+        return;
+    }
+
+    // Group: White then Black
+    ["White","Black"].forEach(player => {
+        let playerPowers = activePowers.filter(p => p.owner === player);
+        if(playerPowers.length === 0) return;
+
+        let header = document.createElement("div");
+        header.style.cssText = "font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin:8px 0 4px 0;";
+        header.innerText = player;
+        list.appendChild(header);
+
+        playerPowers.forEach(p => {
+            let card = document.createElement("div");
+            let colorClass = player === "White" ? "white-power" : "black-power";
+            let isPending = p.turnsUntilActive > 0;
+            card.className = `active-power-card ${colorClass}${isPending ? " pending" : ""}`;
+
+            let timerText = isPending
+                ? `Activates in: <span>${p.turnsUntilActive} turn${p.turnsUntilActive>1?'s':''}</span>`
+                : `Remaining turns: <span>${p.turnsRemaining}</span>`;
+
+            card.innerHTML = `
+                <div class="power-card-name">${p.power.name}${isPending ? " ⏳" : " ✅"}</div>
+                <div class="power-card-effect">${p.power.effect}</div>
+                <div class="power-card-timer">${timerText}</div>
+            `;
+            list.appendChild(card);
+        });
+    });
+}
+
+// ── Color Effect Picker ───────────────────────────────────────────────────────
+
+const EFFECT_COLORS = [
+    { name: "Red",    hex: "#ff2222" },
+    { name: "Orange", hex: "#ff8800" },
+    { name: "Yellow", hex: "#ffee00" },
+    { name: "Green",  hex: "#22ff44" },
+    { name: "Cyan",   hex: "#00eeff" },
+    { name: "Blue",   hex: "#2266ff" },
+    { name: "Purple", hex: "#aa22ff" },
+    { name: "Pink",   hex: "#ff44cc" },
+    { name: "White",  hex: "#ffffff" },
+    { name: "Gold",   hex: "#ffd700" },
+    { name: "Lime",   hex: "#aaff00" },
+    { name: "Teal",   hex: "#00ffcc" },
+];
+
+let selectedEffectColor = "#ff2222";
+
+function buildEffectPicker(){
+    let grid = document.getElementById("colorGrid");
+    EFFECT_COLORS.forEach(c => {
+        let swatch = document.createElement("div");
+        swatch.className = "color-swatch";
+        swatch.title = c.name;
+        swatch.dataset.hex = c.hex;
+        swatch.style.background = c.hex;
+        swatch.style.boxShadow = `0 0 8px ${c.hex}88`;
+        swatch.innerText = c.name;
+        if(c.hex === selectedEffectColor) swatch.classList.add("selected-color");
+        swatch.onclick = () => selectColor(c.hex);
+        grid.appendChild(swatch);
+    });
+}
+
+function openEffectPicker(){
+    document.getElementById("pickerOverlay").style.display = "block";
+    document.getElementById("effectPicker").style.display = "block";
+    setModeBtn("effect");
+    // highlight current color
+    document.querySelectorAll(".color-swatch").forEach(s => {
+        s.classList.toggle("selected-color", s.dataset.hex === selectedEffectColor);
+    });
+}
+
+function closeEffectPicker(){
+    document.getElementById("pickerOverlay").style.display = "none";
+    document.getElementById("effectPicker").style.display = "none";
+    mode = "move";
+    setModeBtn(null);
+}
+
+function selectColor(hex){
+    // null means "remove mode"
+    selectedEffectColor = hex;
+    document.querySelectorAll(".color-swatch").forEach(s => {
+        s.classList.toggle("selected-color", s.dataset.hex === hex);
+    });
+    mode = "effect";
+    setTimeout(() => {
+        document.getElementById("pickerOverlay").style.display = "none";
+        document.getElementById("effectPicker").style.display = "none";
+    }, 150);
+}
+
+
 
 function buildPicker(){
     function makeBtn(code){
@@ -359,7 +764,10 @@ function drawBoard(){
             img.className = "piece";
             img.src = `IMG/IMG/${pieces[i]}.png`;
             // Re-apply persistent effect
-            if(effects.has(i)) img.classList.add("effect-red");
+            if(effects.has(i)){
+                let col = effects.get(i);
+                img.style.filter = `drop-shadow(0 0 6px ${col}) drop-shadow(0 0 3px ${col})`;
+            }
             square.appendChild(img);
         }
 
@@ -392,11 +800,11 @@ function clickSquare(i){
     }
 
     if(mode === "effect"){
-        // Toggle persistent effect
-        if(effects.has(i)){
+        if(selectedEffectColor === null){
+            // remove mode
             effects.delete(i);
         } else {
-            effects.add(i);
+            effects.set(i, selectedEffectColor);
         }
         mode = "move";
         setModeBtn(null);
@@ -418,59 +826,27 @@ function clickSquare(i){
         }
 
         // Move piece; carry effect with it
-        let hadEffect = effects.has(selected);
+        let prevEffect = effects.get(selected);
         effects.delete(selected);
         effects.delete(i);
-        if(hadEffect) effects.add(i);
+        if(prevEffect !== undefined) effects.set(i, prevEffect);
 
         pieces[i] = pieces[selected];
         pieces[selected] = "";
         selected = null;
 
-        turnCount++;
-        activePowers.forEach(p => p.duration--);
-        activePowers = activePowers.filter(p => p.duration > 0);
+        // Track whose turn just completed before switching
+        let justMoved = turn;
+        if(justMoved === "White") whiteTurnCount++;
+        else blackTurnCount++;
 
-        turn = (turn === "White") ? "Black" : "White";
-
-        currentPowers = [...powerPool]
-            .sort(() => Math.random() - 0.5)
-            .slice(0, 3);
+        tickPowers(justMoved);
+        turn = (justMoved === "White") ? "Black" : "White";
 
         drawBoard();
-        drawPowers();
+        drawPowerSidebar();
+        checkForPowerUnlock();
     }
-}
-
-// ── Powers ────────────────────────────────────────────────────────────────────
-
-function drawPowers(){
-    let powersDiv = document.getElementById("powersContainer");
-    powersDiv.innerHTML = "";
-
-    currentPowers.forEach((power, index) => {
-        let btn = document.createElement("button");
-        btn.className = "power-btn";
-        btn.innerText = power.name;
-        btn.onclick = () => pickPower(power, index);
-        powersDiv.appendChild(btn);
-    });
-
-    let activeDiv = document.getElementById("activePowersContainer");
-    activeDiv.innerHTML = "<h3>Active Powers</h3>";
-
-    activePowers.forEach(p => {
-        let div = document.createElement("div");
-        div.className = "active-power";
-        div.innerText = `${p.name} (${p.duration} turns left)`;
-        activeDiv.appendChild(div);
-    });
-}
-
-function pickPower(power, index){
-    activePowers.push({...power});
-    currentPowers.splice(index, 1);
-    drawPowers();
 }
 
 // ── Reset ─────────────────────────────────────────────────────────────────────
@@ -486,24 +862,25 @@ document.getElementById("resetBtn").onclick = () => {
         "Wp","Wp","Wp","Wp","Wp","Wp","Wp","Wp",
         "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
     ];
-    effects.clear();
+    effects = new Map();
     selected = null;
     turn = "White";
-    turnCount = 0;
+    whiteTurnCount = 0;
+    blackTurnCount = 0;
+    activePowers = [];
     mode = "move";
     addPieceType = null;
     setModeBtn(null);
-    currentPowers = [];
-    activePowers = [];
     drawBoard();
-    drawPowers();
+    drawPowerSidebar();
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────────
 
+buildEffectPicker();
 buildPicker();
 drawBoard();
-drawPowers();
+drawPowerSidebar();
 
 </script>
 </body>
