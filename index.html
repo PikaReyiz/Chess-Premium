@@ -625,14 +625,14 @@ const ALL_POWERS = [
     { id:"oracle",       name:"Köylü Miletin Efendisidir!",           effect:"Piyonlar Şah gibi hareket edebilir.",         activatesAfter:0, duration:4 },
     { id:"teleport",     name:"Hain",         effect:"Oyuncuların en düşük değerli taşı kötü(rakip tarafındanda kontrol edilebilir.) olur.",            activatesAfter:0, duration:3 },
     { id:"mirror",       name:"Portal",           effect:"2 Tane portal açılır taşlar hareketini portaldan devam ettirebilir. Taşlar Portal üzerinde duramaz.",        activatesAfter:0, duration:3 },
-    { id:"slow",         name:"Slow Field",       effect:"Opponent can only move pawns next turn",        activatesAfter:1, duration:1 },
-    { id:"reinforce",    name:"Reinforce",        effect:"Add an extra pawn to any empty square",         activatesAfter:0, duration:1 },
-    { id:"hex",          name:"Hex",              effect:"One enemy piece moves randomly next turn",      activatesAfter:1, duration:1 },
-    { id:"bloodlust",    name:"Bloodlust",        effect:"Captured pieces grant +1 extra move this turn", activatesAfter:0, duration:2 },
-    { id:"cloak",        name:"Cloak",            effect:"Your back row is hidden from opponent",         activatesAfter:0, duration:2 },
-    { id:"timewarp",     name:"Time Warp",        effect:"Undo the opponent's last move",                 activatesAfter:0, duration:1 },
-    { id:"adrenaline",   name:"Adrenaline",       effect:"Your king can move 2 squares this turn",        activatesAfter:0, duration:1 },
-    { id:"earthquake",   name:"Earthquake",       effect:"All pawns on rank 4 and 5 are displaced",      activatesAfter:1, duration:1 },
+    { id:"slow",         name:"Tatil günü",       effect:"Sadece piyonlar hareket edebilir",        activatesAfter:0, duration:2 },
+    { id:"reinforce",    name:"Kastamonu",        effect:"Boş bir kare Kastamonu seçilir 2 Kastamonu karesi tutan oyuncu her tur eksta hamle hakkı kazanır.",         activatesAfter:0, duration:10 },
+    { id:"hex",          name:"Duvar",              effect:"Yıkılamaz tarafsız bir kale boş bir kareye çağrılır",      activatesAfter:1, duration:1 },
+    { id:"bloodlust",    name:"Kombo",        effect:"her yenilen taş yiyen taş için ekstra hamle hakkı kazandırır.", activatesAfter:0, duration:2 },
+    { id:"cloak",        name:"Demokrasi",            effect:"Piyonlarından biri Şah olur Bu güç bitiğinde 2 şahın varsa 1 tanesi tekrar piyon olur.",activatesAfter:0, duration:3 },
+    { id:"timewarp",     name:"Pazartesi",        effect:"Her taş sadece 1 kare hareket edebilir",                 activatesAfter:0, duration:3 },
+    { id:"adrenaline",   name:"Kör sinir",       effect:"Eğer bir taş yiyebiliyorsan yemek zorundasın.",        activatesAfter:0, duration:2 },
+    { id:"earthquake",   name:"Bomba",       effect:"Bir taşa bomba bağlanır.Bomba 3X3 Bir alanda patlar ve etrafındakı taşları 'yok eder'.",      activatesAfter:3, duration:3 },
 ];
 
 function getThreeRandomPowers(){
