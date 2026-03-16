@@ -589,8 +589,8 @@ function deserializeState(data){
     globalMoveCount = data.globalMoveCount || 0;
     extraTurnPending= data.extraTurnPending || false;
 
-    effects     = new Map(Object.entries(data.effects     || {}));
-    tileEffects = new Map(Object.entries(data.tileEffects || {}));
+    effects     = new Map(Object.entries(data.effects     || {}).map(([k,v]) => [Number(k), v]));
+    tileEffects = new Map(Object.entries(data.tileEffects || {}).map(([k,v]) => [Number(k), v]));
 
     // Rebuild activePowers from IDs
     activePowers = (data.activePowers || []).map(p => {
