@@ -2,6 +2,9 @@
 <html>
 <head>
 <title>Chess Board with Manual Powers</title>
+<!-- Firebase -->
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
 
 .controls{
@@ -517,6 +520,24 @@ img.piece {
 
 <script>
 
+// ── Firebase Setup ────────────────────────────────────────────────────────────
+
+const firebaseConfig = {
+    apiKey: "AIzaSyDA1qYhXQbVUNWLZXczXWmHlX6hsAF6LOM",
+    authDomain: "chess2premium.firebaseapp.com",
+    databaseURL: "https://chess2premium-default-rtdb.firebaseio.com",
+    projectId: "chess2premium",
+    storageBucket: "chess2premium.firebasestorage.app",
+    messagingSenderId: "36978087717",
+    appId: "1:36978087717:web:89e130b2ec6450500f2ccc"
+};
+
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+const gameRef = db.ref("game");
+
+// ── Local State ───────────────────────────────────────────────────────────────
+
 let pieces = [
     "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
     "Bp","Bp","Bp","Bp","Bp","Bp","Bp","Bp",
@@ -528,23 +549,87 @@ let pieces = [
     "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
 ];
 
-// Persistent effects: Map of square index → color string (piece glow)
-let effects = new Map();
-// Tile effects: Map of square index → color string (pulsing border)
-let tileEffects = new Map();
-
-let selected = null;
-let turn = "White";
-let turnCount = 0;
-
-let mode = "move"; // move | remove | effect | add
-let addPieceType = null;
+let effects    = new Map(); // square index → color (piece glow)
+let tileEffects= new Map(); // square index → color (tile pulse)
+let selected   = null;
+let turn       = "White";
+let globalMoveCount = 0;
+let activePowers    = [];
+let mode            = "move";
+let addPieceType    = null;
+let extraTurnPending= false;
+let isRemoteUpdate  = false; // prevent feedback loop
 
 const WHITE_PIECES = ["Wp","Wn","Wb","Wr","Wq","Wk"];
 const BLACK_PIECES = ["Bp","Bn","Bb","Br","Bq","Bk"];
-const PIECE_LABELS  = {
-    "p":"Pawn","n":"Knight","b":"Bishop","r":"Rook","q":"Queen","k":"King"
-};
+const PIECE_LABELS = { "p":"Pawn","n":"Knight","b":"Bishop","r":"Rook","q":"Queen","k":"King" };
+
+// ── Firebase Sync Helpers ─────────────────────────────────────────────────────
+
+function serializeState(){
+    return {
+        pieces:          pieces,
+        turn:            turn,
+        globalMoveCount: globalMoveCount,
+        activePowers:    activePowers.map(p => ({
+            powerId:         p.power.id,
+            owner:           p.owner,
+            turnsUntilActive:p.turnsUntilActive,
+            turnsRemaining:  p.turnsRemaining
+        })),
+        effects:     Object.fromEntries(effects),
+        tileEffects: Object.fromEntries(tileEffects),
+        extraTurnPending: extraTurnPending
+    };
+}
+
+function deserializeState(data){
+    pieces          = data.pieces || pieces;
+    turn            = data.turn   || "White";
+    globalMoveCount = data.globalMoveCount || 0;
+    extraTurnPending= data.extraTurnPending || false;
+
+    effects     = new Map(Object.entries(data.effects     || {}));
+    tileEffects = new Map(Object.entries(data.tileEffects || {}));
+
+    // Rebuild activePowers from IDs
+    activePowers = (data.activePowers || []).map(p => {
+        let power = ALL_POWERS.find(ap => ap.id === p.powerId);
+        if(!power) return null;
+        return { power, owner: p.owner, turnsUntilActive: p.turnsUntilActive, turnsRemaining: p.turnsRemaining };
+    }).filter(Boolean);
+}
+
+function pushState(){
+    if(isRemoteUpdate) return;
+    gameRef.set(serializeState());
+}
+
+// Listen for remote changes
+gameRef.on("value", snapshot => {
+    const data = snapshot.val();
+    if(!data) return;
+    isRemoteUpdate = true;
+    deserializeState(data);
+
+    // Sync extra turn button visually
+    let etBtn = document.getElementById("extraTurnBtn");
+    if(extraTurnPending){
+        etBtn.style.background  = "#1a3a1a";
+        etBtn.style.borderColor = "#44ff88";
+        etBtn.style.color       = "#44ff88";
+        etBtn.innerText = "⚡ Extra Turn (ON)";
+    } else {
+        etBtn.style.background  = "";
+        etBtn.style.borderColor = "";
+        etBtn.style.color       = "";
+        etBtn.innerText = "⚡ Extra Turn";
+    }
+
+    drawBoard();
+    drawPowerSidebar();
+    isRemoteUpdate = false;
+});
 
 // ── Power System ──────────────────────────────────────────────────────────────
 
@@ -579,27 +664,11 @@ const ALL_POWERS = [
     // ↓ Add your own powers here ↓
 ];
 
-// Global move counter. Starts at 0, increments by 1 after every move.
-// White moves on moves 1,3,5... (after count becomes odd)
-// Black moves on moves 2,4,6... (after count becomes even)
-// Power schedule:
-//   White picks after move 3  (White's 2nd move  — count % 6 === 3)
-//   Black picks after move 6  (Black's 3rd move  — count % 6 === 0, count > 0)
-//   White picks after move 9  (White's 5th move  — count % 6 === 3)
-//   Black picks after move 12 ... and so on every 6 half-turns.
-let globalMoveCount = 0;
-
-// activePowers: array of { power, owner:"White"|"Black", turnsUntilActive, turnsRemaining }
-let activePowers = [];
-
 function getThreeRandomPowers(){
     return [...ALL_POWERS].sort(() => Math.random()-0.5).slice(0,3);
 }
 
 function checkForPowerUnlock(justMoved){
-    // After move 3 = White just completed their 2nd move → White picks
-    // After move 6 = Black just completed their 3rd move → Black picks
-    // Pattern repeats every 6 half-turns
     let mod = globalMoveCount % 6;
     if(mod === 3 && justMoved === "White"){
         openPowerPick("White");
@@ -634,21 +703,19 @@ function pickPower(power, player){
         power: power,
         owner: player,
         turnsUntilActive: power.activatesAfter,
-        turnsRemaining: power.duration
+        turnsRemaining:   power.duration
     });
     document.getElementById("pickerOverlay").style.display = "none";
     document.getElementById("powerPickModal").style.display = "none";
     drawPowerSidebar();
+    pushState();
 }
 
 function tickPowers(justMovedPlayer){
     activePowers.forEach(p => {
         if(p.owner !== justMovedPlayer) return;
-        if(p.turnsUntilActive > 0){
-            p.turnsUntilActive--;
-        } else {
-            p.turnsRemaining--;
-        }
+        if(p.turnsUntilActive > 0) p.turnsUntilActive--;
+        else p.turnsRemaining--;
     });
     activePowers = activePowers.filter(p => p.turnsRemaining > 0 || p.turnsUntilActive > 0);
 }
@@ -656,31 +723,25 @@ function tickPowers(justMovedPlayer){
 function drawPowerSidebar(){
     let list = document.getElementById("activePowersList");
     list.innerHTML = "";
-
     if(activePowers.length === 0){
         list.innerHTML = '<span class="no-powers-msg">No powers yet</span>';
         return;
     }
-
     ["White","Black"].forEach(player => {
         let playerPowers = activePowers.filter(p => p.owner === player);
         if(playerPowers.length === 0) return;
-
         let header = document.createElement("div");
         header.style.cssText = "font-size:11px;color:#666;text-transform:uppercase;letter-spacing:1px;margin:8px 0 4px 0;";
         header.innerText = player;
         list.appendChild(header);
-
         playerPowers.forEach(p => {
             let card = document.createElement("div");
             let colorClass = player === "White" ? "white-power" : "black-power";
-            let isPending = p.turnsUntilActive > 0;
+            let isPending  = p.turnsUntilActive > 0;
             card.className = `active-power-card ${colorClass}${isPending ? " pending" : ""}`;
-
-            let timerText = isPending
+            let timerText  = isPending
                 ? `Activates in: <span>${p.turnsUntilActive} turn${p.turnsUntilActive>1?'s':''}</span>`
                 : `Remaining turns: <span>${p.turnsRemaining}</span>`;
-
             card.innerHTML = `
                 <div class="power-card-name">${p.power.name}${isPending ? " ⏳" : " ✅"}</div>
                 <div class="power-card-effect">${p.power.effect}</div>
@@ -694,32 +755,33 @@ function drawPowerSidebar(){
 // ── Color Effect Picker ───────────────────────────────────────────────────────
 
 const EFFECT_COLORS = [
-    { name: "Red",    hex: "#ff2222" },
-    { name: "Orange", hex: "#ff8800" },
-    { name: "Yellow", hex: "#ffee00" },
-    { name: "Green",  hex: "#22ff44" },
-    { name: "Cyan",   hex: "#00eeff" },
-    { name: "Blue",   hex: "#2266ff" },
-    { name: "Purple", hex: "#aa22ff" },
-    { name: "Pink",   hex: "#ff44cc" },
-    { name: "White",  hex: "#ffffff" },
-    { name: "Gold",   hex: "#ffd700" },
-    { name: "Lime",   hex: "#aaff00" },
-    { name: "Teal",   hex: "#00ffcc" },
+    { name:"Red",    hex:"#ff2222" },
+    { name:"Orange", hex:"#ff8800" },
+    { name:"Yellow", hex:"#ffee00" },
+    { name:"Green",  hex:"#22ff44" },
+    { name:"Cyan",   hex:"#00eeff" },
+    { name:"Blue",   hex:"#2266ff" },
+    { name:"Purple", hex:"#aa22ff" },
+    { name:"Pink",   hex:"#ff44cc" },
+    { name:"White",  hex:"#ffffff" },
+    { name:"Gold",   hex:"#ffd700" },
+    { name:"Lime",   hex:"#aaff00" },
+    { name:"Teal",   hex:"#00ffcc" },
 ];
 
 let selectedEffectColor = "#ff2222";
+let selectedTileColor   = "#ff2222";
 
 function buildEffectPicker(){
     let grid = document.getElementById("colorGrid");
     EFFECT_COLORS.forEach(c => {
         let swatch = document.createElement("div");
-        swatch.className = "color-swatch";
-        swatch.title = c.name;
+        swatch.className   = "color-swatch";
+        swatch.title       = c.name;
         swatch.dataset.hex = c.hex;
         swatch.style.background = c.hex;
-        swatch.style.boxShadow = `0 0 8px ${c.hex}88`;
-        swatch.innerText = c.name;
+        swatch.style.boxShadow  = `0 0 8px ${c.hex}88`;
+        swatch.innerText   = c.name;
         if(c.hex === selectedEffectColor) swatch.classList.add("selected-color");
         swatch.onclick = () => selectColor(c.hex);
         grid.appendChild(swatch);
@@ -728,23 +790,24 @@ function buildEffectPicker(){
 
 function openEffectPicker(){
     document.getElementById("pickerOverlay").style.display = "block";
-    document.getElementById("effectPicker").style.display = "block";
-    setModeBtn("effect");
-    // highlight current color
+    document.getElementById("effectPicker").style.display  = "block";
+    document.getElementById("effectPicker").querySelector("h3").innerText = "Choose a glow color";
     document.querySelectorAll(".color-swatch").forEach(s => {
         s.classList.toggle("selected-color", s.dataset.hex === selectedEffectColor);
+        s.onclick = () => selectColor(s.dataset.hex);
     });
+    document.querySelector(".remove-swatch").onclick = () => selectColor(null);
+    setModeBtn("effect");
 }
 
 function closeEffectPicker(){
     document.getElementById("pickerOverlay").style.display = "none";
-    document.getElementById("effectPicker").style.display = "none";
+    document.getElementById("effectPicker").style.display  = "none";
     mode = "move";
     setModeBtn(null);
 }
 
 function selectColor(hex){
-    // null means "remove mode"
     selectedEffectColor = hex;
     document.querySelectorAll(".color-swatch").forEach(s => {
         s.classList.toggle("selected-color", s.dataset.hex === hex);
@@ -752,59 +815,44 @@ function selectColor(hex){
     mode = "effect";
     setTimeout(() => {
         document.getElementById("pickerOverlay").style.display = "none";
-        document.getElementById("effectPicker").style.display = "none";
+        document.getElementById("effectPicker").style.display  = "none";
     }, 150);
 }
 
 // ── Tile Effect Picker ────────────────────────────────────────────────────────
 
-let selectedTileColor = "#ff2222";
-
 function openTileEffectPicker(){
-    // Reuse the same color picker modal but wire it to tile mode
-    selectedEffectColor = selectedTileColor; // sync highlight
+    document.getElementById("pickerOverlay").style.display = "block";
+    document.getElementById("effectPicker").style.display  = "block";
+    document.getElementById("effectPicker").querySelector("h3").innerText = "Choose a tile pulse color";
     document.querySelectorAll(".color-swatch").forEach(s => {
         s.classList.toggle("selected-color", s.dataset.hex === selectedTileColor);
-    });
-    document.getElementById("effectPicker").querySelector("h3").innerText = "Choose a tile pulse color";
-    document.getElementById("pickerOverlay").style.display = "block";
-    document.getElementById("effectPicker").style.display = "block";
-    setModeBtn("tileEffect");
-    // Override the swatch onclick to go into tile mode
-    document.querySelectorAll(".color-swatch").forEach(s => {
         s.onclick = () => selectTileColor(s.dataset.hex);
     });
-    // Override remove button
     document.querySelector(".remove-swatch").onclick = () => selectTileColor(null);
+    setModeBtn("tileEffect");
 }
 
 function selectTileColor(hex){
     selectedTileColor = hex;
     mode = "tileEffect";
-    // restore swatch onclicks for piece effect picker
-    document.querySelectorAll(".color-swatch").forEach(s => {
-        s.classList.toggle("selected-color", s.dataset.hex === hex);
-        s.onclick = () => selectColor(s.dataset.hex);
-    });
-    document.querySelector(".remove-swatch").onclick = () => selectColor(null);
-    document.getElementById("effectPicker").querySelector("h3").innerText = "Choose a glow color";
     setTimeout(() => {
         document.getElementById("pickerOverlay").style.display = "none";
-        document.getElementById("effectPicker").style.display = "none";
+        document.getElementById("effectPicker").style.display  = "none";
     }, 150);
 }
 
-
+// ── Piece Picker ──────────────────────────────────────────────────────────────
 
 function buildPicker(){
     function makeBtn(code){
         let btn = document.createElement("div");
-        btn.className = "picker-piece";
-        btn.title = PIECE_LABELS[code[1].toLowerCase()] || code;
-        btn.dataset.code = code;
-        let img = document.createElement("img");
-        img.src = `IMG/IMG/${code}.png`;
-        img.alt = code;
+        btn.className      = "picker-piece";
+        btn.title          = PIECE_LABELS[code[1].toLowerCase()] || code;
+        btn.dataset.code   = code;
+        let img            = document.createElement("img");
+        img.src            = `IMG/IMG/${code}.png`;
+        img.alt            = code;
         btn.appendChild(img);
         btn.onclick = () => selectPickerPiece(code);
         return btn;
@@ -817,20 +865,16 @@ function buildPicker(){
 
 function openPicker(){
     addPieceType = null;
-    // clear selection highlight
     document.querySelectorAll(".picker-piece").forEach(b => b.classList.remove("selected-piece"));
     document.getElementById("pickerOverlay").style.display = "block";
-    document.getElementById("piecePicker").style.display = "block";
+    document.getElementById("piecePicker").style.display   = "block";
     setModeBtn("add");
 }
 
 function closePicker(){
     document.getElementById("pickerOverlay").style.display = "none";
-    document.getElementById("piecePicker").style.display = "none";
-    if(!addPieceType) {
-        mode = "move";
-        setModeBtn(null);
-    }
+    document.getElementById("piecePicker").style.display   = "none";
+    if(!addPieceType){ mode = "move"; setModeBtn(null); }
 }
 
 function selectPickerPiece(code){
@@ -839,33 +883,32 @@ function selectPickerPiece(code){
     document.querySelectorAll(".picker-piece").forEach(b => {
         b.classList.toggle("selected-piece", b.dataset.code === code);
     });
-    // close picker after a short delay so user sees the highlight
     setTimeout(() => {
         document.getElementById("pickerOverlay").style.display = "none";
-        document.getElementById("piecePicker").style.display = "none";
+        document.getElementById("piecePicker").style.display   = "none";
     }, 200);
 }
 
 // ── Extra Turn ────────────────────────────────────────────────────────────────
 
-// When true, the next completed move will NOT switch turns, NOT increment
-// globalMoveCount, and NOT tick powers — giving the same player another move.
-let extraTurnPending = false;
+let extraTurnPendingLocal = false; // local copy to avoid loop
 
 function grantExtraTurn(){
-    extraTurnPending = !extraTurnPending; // toggle so you can cancel it too
+    extraTurnPending = !extraTurnPending;
+    extraTurnPendingLocal = extraTurnPending;
     let btn = document.getElementById("extraTurnBtn");
     if(extraTurnPending){
-        btn.style.background = "#1a3a1a";
+        btn.style.background  = "#1a3a1a";
         btn.style.borderColor = "#44ff88";
-        btn.style.color = "#44ff88";
+        btn.style.color       = "#44ff88";
         btn.innerText = "⚡ Extra Turn (ON)";
     } else {
-        btn.style.background = "";
+        btn.style.background  = "";
         btn.style.borderColor = "";
-        btn.style.color = "";
+        btn.style.color       = "";
         btn.innerText = "⚡ Extra Turn";
     }
+    pushState();
 }
 
 // ── Random Square Pickers ─────────────────────────────────────────────────────
@@ -878,12 +921,8 @@ function pickRandomSquare(type){
         if(type === "any")                          candidates.push(i);
     }
     if(candidates.length === 0) return;
-
     let pick = candidates[Math.floor(Math.random() * candidates.length)];
-
-    // Flash highlight on the picked square
-    let boardEl = document.getElementById("board");
-    let sq = boardEl.children[pick];
+    let sq   = document.getElementById("board").children[pick];
     if(sq){
         sq.classList.add("highlight-flash");
         setTimeout(() => sq.classList.remove("highlight-flash"), 1200);
@@ -893,11 +932,9 @@ function pickRandomSquare(type){
 // ── Mode Buttons ──────────────────────────────────────────────────────────────
 
 function setModeBtn(active){
-    ["btnAdd","btnRemove"].forEach(id => {
+    ["btnAdd","btnRemove","btnEffect","btnTileEffect"].forEach(id => {
         document.getElementById(id).classList.remove("active");
     });
-    document.getElementById("btnEffect").classList.remove("active");
-    document.getElementById("btnTileEffect").classList.remove("active");
     if(active === "add")        document.getElementById("btnAdd").classList.add("active");
     if(active === "remove")     document.getElementById("btnRemove").classList.add("active");
     if(active === "effect")     document.getElementById("btnEffect").classList.add("active");
@@ -915,37 +952,31 @@ function setMode(m){
 function drawBoard(){
     let board = document.getElementById("board");
     board.innerHTML = "";
-
-    for(let i=0; i<64; i++){
+    for(let i = 0; i < 64; i++){
         let square = document.createElement("div");
         square.className = "square";
         if(i === selected) square.classList.add("selected");
-
-        // Apply pulsing tile border effect
         if(tileEffects.has(i)){
-            let tc = tileEffects.get(i);
             square.classList.add("tile-effect");
-            square.style.setProperty("--tc", tc);
+            square.style.setProperty("--tc", tileEffects.get(i));
         }
-
         if(pieces[i] !== ""){
-            let img = document.createElement("img");
+            let img    = document.createElement("img");
             img.className = "piece";
-            img.src = `IMG/IMG/${pieces[i]}.png`;
-            // Re-apply persistent effect
+            img.src    = `IMG/IMG/${pieces[i]}.png`;
             if(effects.has(i)){
                 let col = effects.get(i);
                 img.style.filter = `drop-shadow(0 0 6px ${col}) drop-shadow(0 0 3px ${col})`;
             }
             square.appendChild(img);
         }
-
         square.onclick = () => clickSquare(i);
         board.appendChild(square);
     }
-
     document.getElementById("turn").innerText = `Current Turn: ${turn}`;
 }
+
+// ── Click Handler ─────────────────────────────────────────────────────────────
 
 function clickSquare(i){
 
@@ -955,86 +986,69 @@ function clickSquare(i){
         mode = "move";
         setModeBtn(null);
         drawBoard();
+        pushState();
         return;
     }
 
     if(mode === "add"){
-        if(addPieceType){
-            pieces[i] = addPieceType;
-            drawBoard();
-        }
-        // Stay in add mode so user can place more of the same piece
-        // They can click another piece in picker or press another tool to exit
+        if(addPieceType){ pieces[i] = addPieceType; drawBoard(); pushState(); }
         return;
     }
 
     if(mode === "tileEffect"){
-        if(selectedTileColor === null){
-            tileEffects.delete(i);
-        } else {
-            tileEffects.set(i, selectedTileColor);
-        }
+        if(selectedTileColor === null) tileEffects.delete(i);
+        else tileEffects.set(i, selectedTileColor);
         mode = "move";
         setModeBtn(null);
         drawBoard();
+        pushState();
         return;
     }
 
     if(mode === "effect"){
-        if(selectedEffectColor === null){
-            // remove mode
-            effects.delete(i);
-        } else {
-            effects.set(i, selectedEffectColor);
-        }
+        if(selectedEffectColor === null) effects.delete(i);
+        else effects.set(i, selectedEffectColor);
         mode = "move";
         setModeBtn(null);
         drawBoard();
+        pushState();
         return;
     }
 
-    // Default: move mode
+    // Move mode
     if(selected === null){
-        if(pieces[i] !== ""){
-            selected = i;
-            drawBoard();
-        }
+        if(pieces[i] !== ""){ selected = i; drawBoard(); }
     } else {
-        if(selected === i){
-            selected = null;
-            drawBoard();
-            return;
-        }
+        if(selected === i){ selected = null; drawBoard(); return; }
 
-        // Move piece; carry effect with it
         let prevEffect = effects.get(selected);
         effects.delete(selected);
         effects.delete(i);
         if(prevEffect !== undefined) effects.set(i, prevEffect);
 
-        pieces[i] = pieces[selected];
+        pieces[i]       = pieces[selected];
         pieces[selected] = "";
-        selected = null;
+        selected        = null;
 
         let justMoved = turn;
 
         if(extraTurnPending){
-            // Burn the extra turn: same player goes again, nothing else changes
             extraTurnPending = false;
             let btn = document.getElementById("extraTurnBtn");
-            btn.style.background = "";
+            btn.style.background  = "";
             btn.style.borderColor = "";
-            btn.style.color = "";
+            btn.style.color       = "";
             btn.innerText = "⚡ Extra Turn";
             drawBoard();
             drawPowerSidebar();
+            pushState();
         } else {
-            // Normal move: increment counter, tick powers, switch turn
             globalMoveCount++;
             tickPowers(justMoved);
             turn = (justMoved === "White") ? "Black" : "White";
             drawBoard();
             drawPowerSidebar();
+            pushState();
             checkForPowerUnlock(justMoved);
         }
     }
@@ -1053,21 +1067,22 @@ document.getElementById("resetBtn").onclick = () => {
         "Wp","Wp","Wp","Wp","Wp","Wp","Wp","Wp",
         "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
     ];
+    effects      = new Map();
+    tileEffects  = new Map();
+    selected     = null;
+    turn         = "White";
+    globalMoveCount  = 0;
+    activePowers = [];
+    mode         = "move";
+    addPieceType = null;
     extraTurnPending = false;
     let etBtn = document.getElementById("extraTurnBtn");
     etBtn.style.background = ""; etBtn.style.borderColor = ""; etBtn.style.color = "";
     etBtn.innerText = "⚡ Extra Turn";
-    effects = new Map();
-    tileEffects = new Map();
-    selected = null;
-    turn = "White";
-    globalMoveCount = 0;
-    activePowers = [];
-    mode = "move";
-    addPieceType = null;
     setModeBtn(null);
     drawBoard();
     drawPowerSidebar();
+    pushState();
 };
 
 // ── Init ──────────────────────────────────────────────────────────────────────
