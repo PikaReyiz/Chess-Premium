@@ -979,6 +979,8 @@ function clickSquare(i){
         drawBoard();
         return;
     }
+
+    if(mode === "effect"){
         if(selectedEffectColor === null){
             // remove mode
             effects.delete(i);
