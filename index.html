@@ -76,6 +76,19 @@
 .bottom-btn:hover { background: #222240; border-color: #557; color: #ddd; }
 .bottom-btn.active { background: #553300; border-color: #ff9900; color: #ff9900; }
 
+/* Pulsing tile border effect */
+@keyframes tile-pulse {
+    0%   { box-shadow: inset 0 0 0 3px var(--tc), 0 0 6px 1px var(--tc); opacity: 1; }
+    50%  { box-shadow: inset 0 0 0 3px var(--tc), 0 0 14px 4px var(--tc); opacity: 0.6; }
+    100% { box-shadow: inset 0 0 0 3px var(--tc), 0 0 6px 1px var(--tc); opacity: 1; }
+}
+
+.square.tile-effect {
+    animation: tile-pulse 1.4s ease-in-out infinite;
+    position: relative;
+    z-index: 0;
+}
+
 /* highlighted random square flash */
 .square.highlight-flash {
     outline: 3px solid #ff9900;
@@ -489,7 +502,8 @@ img.piece {
     <div class="board-wrapper">
         <div id="board" class="board"></div>
         <div class="bottom-controls">
-            <button class="bottom-btn" id="btnEffect" onclick="openEffectPicker()">✨ Color Effect</button>
+            <button class="bottom-btn" id="btnEffect" onclick="openEffectPicker()">✨ Piece Glow</button>
+            <button class="bottom-btn" id="btnTileEffect" onclick="openTileEffectPicker()">🔲 Tile Effect</button>
             <button class="bottom-btn" onclick="pickRandomSquare('empty')">🎲 Random Empty</button>
             <button class="bottom-btn" onclick="pickRandomSquare('occupied')">🎲 Random Piece</button>
             <button class="bottom-btn" onclick="pickRandomSquare('any')">🎲 Random Any</button>
@@ -514,8 +528,10 @@ let pieces = [
     "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
 ];
 
-// Persistent effects: Map of square index → color string
+// Persistent effects: Map of square index → color string (piece glow)
 let effects = new Map();
+// Tile effects: Map of square index → color string (pulsing border)
+let tileEffects = new Map();
 
 let selected = null;
 let turn = "White";
@@ -740,6 +756,44 @@ function selectColor(hex){
     }, 150);
 }
 
+// ── Tile Effect Picker ────────────────────────────────────────────────────────
+
+let selectedTileColor = "#ff2222";
+
+function openTileEffectPicker(){
+    // Reuse the same color picker modal but wire it to tile mode
+    selectedEffectColor = selectedTileColor; // sync highlight
+    document.querySelectorAll(".color-swatch").forEach(s => {
+        s.classList.toggle("selected-color", s.dataset.hex === selectedTileColor);
+    });
+    document.getElementById("effectPicker").querySelector("h3").innerText = "Choose a tile pulse color";
+    document.getElementById("pickerOverlay").style.display = "block";
+    document.getElementById("effectPicker").style.display = "block";
+    setModeBtn("tileEffect");
+    // Override the swatch onclick to go into tile mode
+    document.querySelectorAll(".color-swatch").forEach(s => {
+        s.onclick = () => selectTileColor(s.dataset.hex);
+    });
+    // Override remove button
+    document.querySelector(".remove-swatch").onclick = () => selectTileColor(null);
+}
+
+function selectTileColor(hex){
+    selectedTileColor = hex;
+    mode = "tileEffect";
+    // restore swatch onclicks for piece effect picker
+    document.querySelectorAll(".color-swatch").forEach(s => {
+        s.classList.toggle("selected-color", s.dataset.hex === hex);
+        s.onclick = () => selectColor(s.dataset.hex);
+    });
+    document.querySelector(".remove-swatch").onclick = () => selectColor(null);
+    document.getElementById("effectPicker").querySelector("h3").innerText = "Choose a glow color";
+    setTimeout(() => {
+        document.getElementById("pickerOverlay").style.display = "none";
+        document.getElementById("effectPicker").style.display = "none";
+    }, 150);
+}
+
 
 
 function buildPicker(){
@@ -843,9 +897,11 @@ function setModeBtn(active){
         document.getElementById(id).classList.remove("active");
     });
     document.getElementById("btnEffect").classList.remove("active");
-    if(active === "add")    document.getElementById("btnAdd").classList.add("active");
-    if(active === "remove") document.getElementById("btnRemove").classList.add("active");
-    if(active === "effect") document.getElementById("btnEffect").classList.add("active");
+    document.getElementById("btnTileEffect").classList.remove("active");
+    if(active === "add")        document.getElementById("btnAdd").classList.add("active");
+    if(active === "remove")     document.getElementById("btnRemove").classList.add("active");
+    if(active === "effect")     document.getElementById("btnEffect").classList.add("active");
+    if(active === "tileEffect") document.getElementById("btnTileEffect").classList.add("active");
 }
 
 function setMode(m){
@@ -864,6 +920,13 @@ function drawBoard(){
         let square = document.createElement("div");
         square.className = "square";
         if(i === selected) square.classList.add("selected");
+
+        // Apply pulsing tile border effect
+        if(tileEffects.has(i)){
+            let tc = tileEffects.get(i);
+            square.classList.add("tile-effect");
+            square.style.setProperty("--tc", tc);
+        }
 
         if(pieces[i] !== ""){
             let img = document.createElement("img");
@@ -905,7 +968,17 @@ function clickSquare(i){
         return;
     }
 
-    if(mode === "effect"){
+    if(mode === "tileEffect"){
+        if(selectedTileColor === null){
+            tileEffects.delete(i);
+        } else {
+            tileEffects.set(i, selectedTileColor);
+        }
+        mode = "move";
+        setModeBtn(null);
+        drawBoard();
+        return;
+    }
         if(selectedEffectColor === null){
             // remove mode
             effects.delete(i);
@@ -983,6 +1056,7 @@ document.getElementById("resetBtn").onclick = () => {
     etBtn.style.background = ""; etBtn.style.borderColor = ""; etBtn.style.color = "";
     etBtn.innerText = "⚡ Extra Turn";
     effects = new Map();
+    tileEffects = new Map();
     selected = null;
     turn = "White";
     globalMoveCount = 0;
