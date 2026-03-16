@@ -476,7 +476,13 @@ const PIECE_LABELS  = {
 
 // ── Power System ──────────────────────────────────────────────────────────────
 
-// All available powers with name, effect description, activatesAfter (turns delay), duration (turns active)
+// =============================================================================
+// HOW TO ADD MORE POWERS:
+// Just add a new object to ALL_POWERS below following this format:
+//   { id:"unique_id", name:"Display Name", effect:"Description of the effect",
+//     activatesAfter: 0,   ← turns before it becomes active (0 = instant)
+//     duration: 2 }        ← how many of that player's turns it stays active
+// =============================================================================
 const ALL_POWERS = [
     { id:"double_move",  name:"Double Move",     effect:"Take two moves next turn instead of one",        activatesAfter:0, duration:1 },
     { id:"shield",       name:"Shield",           effect:"Your pieces cannot be captured this turn",       activatesAfter:0, duration:1 },
@@ -498,40 +504,42 @@ const ALL_POWERS = [
     { id:"timewarp",     name:"Time Warp",        effect:"Undo the opponent's last move",                 activatesAfter:0, duration:1 },
     { id:"adrenaline",   name:"Adrenaline",       effect:"Your king can move 2 squares this turn",        activatesAfter:0, duration:1 },
     { id:"earthquake",   name:"Earthquake",       effect:"All pawns on rank 4 and 5 are displaced",      activatesAfter:1, duration:1 },
+    // ↓ Add your own powers here ↓
 ];
 
-// whiteTurnCount / blackTurnCount — each increments when that player completes a move
-let whiteTurnCount = 0;
-let blackTurnCount = 0;
+// Global move counter. Starts at 0, increments by 1 after every move.
+// White moves on moves 1,3,5... (after count becomes odd)
+// Black moves on moves 2,4,6... (after count becomes even)
+// Power schedule:
+//   White picks after move 3  (White's 2nd move  — count % 6 === 3)
+//   Black picks after move 6  (Black's 3rd move  — count % 6 === 0, count > 0)
+//   White picks after move 9  (White's 5th move  — count % 6 === 3)
+//   Black picks after move 12 ... and so on every 6 half-turns.
+let globalMoveCount = 0;
 
 // activePowers: array of { power, owner:"White"|"Black", turnsUntilActive, turnsRemaining }
 let activePowers = [];
-
-// pendingPickFor: "White"|"Black"|null — if set, a pick modal is open
-let pendingPickFor = null;
 
 function getThreeRandomPowers(){
     return [...ALL_POWERS].sort(() => Math.random()-0.5).slice(0,3);
 }
 
-function checkForPowerUnlock(){
-    // White gets a pick on their 3rd, 6th, 9th... turn
-    if(turn === "White" && whiteTurnCount > 0 && whiteTurnCount % 3 === 0){
+function checkForPowerUnlock(justMoved){
+    // After move 3 = White just completed their 2nd move → White picks
+    // After move 6 = Black just completed their 3rd move → Black picks
+    // Pattern repeats every 6 half-turns
+    let mod = globalMoveCount % 6;
+    if(mod === 3 && justMoved === "White"){
         openPowerPick("White");
-        return;
-    }
-    // Black gets a pick on their 3rd, 6th, 9th... turn
-    if(turn === "Black" && blackTurnCount > 0 && blackTurnCount % 3 === 0){
+    } else if(mod === 0 && globalMoveCount > 0 && justMoved === "Black"){
         openPowerPick("Black");
-        return;
     }
 }
 
 function openPowerPick(player){
-    pendingPickFor = player;
     let options = getThreeRandomPowers();
     document.getElementById("powerPickTitle").innerText = `${player}'s Power Pick`;
-    document.getElementById("powerPickSubtitle").innerText = `Turn ${player === "White" ? whiteTurnCount : blackTurnCount} — choose one`;
+    document.getElementById("powerPickSubtitle").innerText = `Move ${globalMoveCount} — choose one`;
     let optDiv = document.getElementById("powerOptions");
     optDiv.innerHTML = "";
     options.forEach(p => {
@@ -558,12 +566,10 @@ function pickPower(power, player){
     });
     document.getElementById("pickerOverlay").style.display = "none";
     document.getElementById("powerPickModal").style.display = "none";
-    pendingPickFor = null;
     drawPowerSidebar();
 }
 
 function tickPowers(justMovedPlayer){
-    // Tick down powers owned by the player who just moved
     activePowers.forEach(p => {
         if(p.owner !== justMovedPlayer) return;
         if(p.turnsUntilActive > 0){
@@ -584,7 +590,6 @@ function drawPowerSidebar(){
         return;
     }
 
-    // Group: White then Black
     ["White","Black"].forEach(player => {
         let playerPowers = activePowers.filter(p => p.owner === player);
         if(playerPowers.length === 0) return;
@@ -837,15 +842,14 @@ function clickSquare(i){
 
         // Track whose turn just completed before switching
         let justMoved = turn;
-        if(justMoved === "White") whiteTurnCount++;
-        else blackTurnCount++;
+        globalMoveCount++;
 
         tickPowers(justMoved);
         turn = (justMoved === "White") ? "Black" : "White";
 
         drawBoard();
         drawPowerSidebar();
-        checkForPowerUnlock();
+        checkForPowerUnlock(justMoved);
     }
 }
 
@@ -865,8 +869,7 @@ document.getElementById("resetBtn").onclick = () => {
     effects = new Map();
     selected = null;
     turn = "White";
-    whiteTurnCount = 0;
-    blackTurnCount = 0;
+    globalMoveCount = 0;
     activePowers = [];
     mode = "move";
     addPieceType = null;
