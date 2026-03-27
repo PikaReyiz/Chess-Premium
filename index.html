@@ -2,6 +2,7 @@
 <html>
 <head>
 <title>Chess Board with Manual Powers</title>
+<!-- Firebase -->
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-database-compat.js"></script>
 <style>
@@ -17,22 +18,24 @@
 .tool-btn{
     margin:5px;
     padding:6px 12px;
-    background:#222;
-    color:white;
-    border:1px solid #555;
+    background:#2c2c2c;
+    color:#c8b89a;
+    border:1px solid #4a3728;
     cursor:pointer;
+    border-radius:4px;
 }
 
 .tool-btn:hover{
-    background:#444;
+    background:#3d2f22;
 }
 
 .tool-btn.active{
-    background:#553300;
+    background:#5c3a1a;
     border-color:#ff9900;
     color:#ff9900;
 }
 
+/* Extra turn button */
 #extraTurnBtn {
     padding: 6px 16px;
     background: #1a2a1a;
@@ -45,6 +48,7 @@
 }
 #extraTurnBtn:hover { background: #223322; }
 
+/* Bottom controls under board */
 .board-wrapper {
     display: flex;
     flex-direction: column;
@@ -64,18 +68,19 @@
     flex: 1;
     min-width: 100px;
     padding: 7px 10px;
-    background: #1a1a2a;
-    color: #aaa;
-    border: 1px solid #334;
+    background: #2c2c2c;
+    color: #c8b89a;
+    border: 1px solid #4a3728;
     cursor: pointer;
     font-size: 12px;
     border-radius: 4px;
     transition: background 0.15s, border-color 0.15s, color 0.15s;
     white-space: nowrap;
 }
-.bottom-btn:hover { background: #222240; border-color: #557; color: #ddd; }
-.bottom-btn.active { background: #553300; border-color: #ff9900; color: #ff9900; }
+.bottom-btn:hover { background: #3d2f22; border-color: #7a5c3a; color: #e8d4b0; }
+.bottom-btn.active { background: #5c3a1a; border-color: #ff9900; color: #ff9900; }
 
+/* Pulsing tile border effect */
 @keyframes tile-pulse {
     0%   { box-shadow: inset 0 0 0 3px var(--tc), 0 0 6px 1px var(--tc); opacity: 1; }
     50%  { box-shadow: inset 0 0 0 3px var(--tc), 0 0 14px 4px var(--tc); opacity: 0.6; }
@@ -88,6 +93,7 @@
     z-index: 0;
 }
 
+/* highlighted random square flash */
 .square.highlight-flash {
     outline: 3px solid #ff9900;
     background: rgba(255,153,0,0.18);
@@ -97,10 +103,10 @@
 body {
     font-family: Arial;
     text-align: center;
-    background-color: #0d1117;
+    background-color: #1a1a1a;
     margin: 0;
     padding: 20px;
-    color: white;
+    color: #c8b89a;
 }
 
 .container {
@@ -113,11 +119,11 @@ body {
 .board {
     width: 480px;
     height: 480px;
-    background-image: url('IMG/IMG/chessboard.png');
-    background-size: cover;
     display: grid;
     grid-template-columns: repeat(8, 60px);
     grid-template-rows: repeat(8, 60px);
+    border: 3px solid #4a3728;
+    box-shadow: 0 0 30px rgba(0,0,0,0.8), inset 0 0 0 1px #6b4f3a;
 }
 
 .square {
@@ -129,8 +135,15 @@ body {
     cursor: pointer;
 }
 
+/* Chess.com style alternating squares - set by JS */
+.square.light { background-color: #f0d9b5; }
+.square.dark  { background-color: #b58863; }
+.square.light:hover { background-color: #e8d082; }
+.square.dark:hover  { background-color: #cfa55a; }
+
 .square.selected {
-    outline: 2px solid red;
+    background-color: #f6f669 !important;
+    outline: none;
 }
 
 img.piece {
@@ -140,6 +153,7 @@ img.piece {
     pointer-events: none;
 }
 
+/* ── Power Sidebar ── */
 #powerSidebar {
     width: 220px;
     display: flex;
@@ -153,24 +167,24 @@ img.piece {
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 2px;
-    color: #888;
-    border-bottom: 1px solid #333;
+    color: #9a7c5a;
+    border-bottom: 1px solid #4a3728;
     padding-bottom: 6px;
 }
 
 .active-power-card {
-    background: #111722;
-    border: 1px solid #2a3040;
-    border-left: 3px solid #555;
+    background: #252525;
+    border: 1px solid #3a2e22;
+    border-left: 3px solid #6b4f3a;
     border-radius: 6px;
     padding: 9px 12px;
     font-size: 12px;
     line-height: 1.6;
 }
 
-.active-power-card.white-power { border-left-color: #e8e8e8; }
-.active-power-card.black-power { border-left-color: #888; }
-.active-power-card.pending     { border-left-color: #ff9900; opacity: 0.7; }
+.active-power-card.white-power { border-left-color: #f0d9b5; }
+.active-power-card.black-power { border-left-color: #b58863; }
+.active-power-card.pending     { border-left-color: #ff9900; opacity: 0.8; }
 
 .power-card-name {
     font-size: 13px;
@@ -201,6 +215,7 @@ img.piece {
     font-style: italic;
 }
 
+/* Power pick modal */
 #powerPickModal {
     display: none;
     position: fixed;
@@ -266,6 +281,7 @@ img.piece {
     color: #ff9900;
 }
 
+/* Color Effect Picker */
 #effectPicker {
     display: none;
     position: fixed;
@@ -452,6 +468,7 @@ img.piece {
 </head>
 <body>
 
+<!-- Color Effect Picker -->
 <div id="effectPicker">
     <h3>Choose a glow color</h3>
     <div class="color-grid" id="colorGrid"></div>
@@ -459,12 +476,14 @@ img.piece {
     <button id="effectCancel" onclick="closeEffectPicker()">Cancel</button>
 </div>
 
+<!-- Power Pick Modal -->
 <div id="powerPickModal">
     <h3 id="powerPickTitle">Choose a Power</h3>
     <div class="pick-subtitle" id="powerPickSubtitle"></div>
     <div id="powerOptions"></div>
 </div>
 
+<!-- Piece Picker Overlay -->
 
 <div id="pickerOverlay" onclick="closePicker()"></div>
 <div id="piecePicker">
@@ -486,9 +505,9 @@ img.piece {
     <button id="extraTurnBtn" onclick="grantExtraTurn()">⚡ Extra Turn</button>
 </div>
 
-<h1>Shared Chess Board</h1>
-<h2 id="turn">Current Turn: White</h2>
-<button id="resetBtn">Reset Board</button>
+<h1 style="color:#c8b89a; margin:10px 0 4px 0; font-size:22px;">Shared Chess Board</h1>
+<h2 id="turn" style="color:#9a7c5a; margin:4px 0 10px 0; font-size:16px; font-weight:normal;">Current Turn: White</h2>
+<button id="resetBtn" style="padding:6px 18px;background:#2c2c2c;color:#c8b89a;border:1px solid #4a3728;border-radius:4px;cursor:pointer;">Reset Board</button>
 
 <div class="container">
     <div class="board-wrapper">
@@ -508,6 +527,9 @@ img.piece {
 </div>
 
 <script>
+
+// ── Firebase Setup ────────────────────────────────────────────────────────────
+
 const firebaseConfig = {
     apiKey: "AIzaSyDA1qYhXQbVUNWLZXczXWmHlX6hsAF6LOM",
     authDomain: "chess2premium.firebaseapp.com",
@@ -522,6 +544,7 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 const gameRef = db.ref("game");
 
+// ── Local State ───────────────────────────────────────────────────────────────
 
 let pieces = [
     "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
@@ -534,8 +557,8 @@ let pieces = [
     "Wr","Wn","Wb","Wq","Wk","Wb","Wn","Wr"
 ];
 
-let effects    = new Map();
-let tileEffects= new Map(); 
+let effects    = new Map(); // square index → color (piece glow)
+let tileEffects= new Map(); // square index → color (tile pulse)
 let selected   = null;
 let turn       = "White";
 let globalMoveCount = 0;
@@ -543,12 +566,13 @@ let activePowers    = [];
 let mode            = "move";
 let addPieceType    = null;
 let extraTurnPending= false;
-let isRemoteUpdate  = false;
+let isRemoteUpdate  = false; // prevent feedback loop
 
 const WHITE_PIECES = ["Wp","Wn","Wb","Wr","Wq","Wk"];
 const BLACK_PIECES = ["Bp","Bn","Bb","Br","Bq","Bk"];
 const PIECE_LABELS = { "p":"Pawn","n":"Knight","b":"Bishop","r":"Rook","q":"Queen","k":"King" };
 
+// ── Firebase Sync Helpers ─────────────────────────────────────────────────────
 
 function serializeState(){
     return {
@@ -575,6 +599,8 @@ function deserializeState(data){
 
     effects     = new Map(Object.entries(data.effects     || {}).map(([k,v]) => [Number(k), v]));
     tileEffects = new Map(Object.entries(data.tileEffects || {}).map(([k,v]) => [Number(k), v]));
+
+    // Rebuild activePowers from IDs
     activePowers = (data.activePowers || []).map(p => {
         let power = ALL_POWERS.find(ap => ap.id === p.powerId);
         if(!power) return null;
@@ -587,6 +613,7 @@ function pushState(){
     gameRef.set(serializeState());
 }
 
+// Listen for remote changes
 gameRef.on("value", snapshot => {
     const data = snapshot.val();
     if(!data) return;
@@ -612,27 +639,37 @@ gameRef.on("value", snapshot => {
     isRemoteUpdate = false;
 });
 
+// ── Power System ──────────────────────────────────────────────────────────────
+
+// =============================================================================
+// HOW TO ADD MORE POWERS:
+// Just add a new object to ALL_POWERS below following this format:
+//   { id:"unique_id", name:"Display Name", effect:"Description of the effect",
+//     activatesAfter: 0,   ← turns before it becomes active (0 = instant)
+//     duration: 2 }        ← how many of that player's turns it stays active
+// =============================================================================
 const ALL_POWERS = [
-    { id:"double_move",  name:"Çift Hamle",     effect:"Her taş iki hamle halinde oynamak zorunda.",        activatesAfter:0, duration:2 },
-    { id:"shield",       name:"Koruma",           effect:"Taşlar başka taşlar tarafından yenilemez.",       activatesAfter:0, duration:2 },
-    { id:"ghost",        name:"Kaos",            effect:"Rastgele 3(any) kare oyun boyunca üzerinde duran taşları öldürür.(Kral Hariç)",     activatesAfter:1, duration:1},
-    { id:"freeze",       name:"Buzlama",           effect:"Rastgele 3 taş donar",       activatesAfter:0, duration:1},
-    { id:"resurrect",    name:"Zombi",        effect:"Yenilen her taş kendi taşın olarak kralına en yakın karede dirilir.",                    activatesAfter:1, duration:1 },
-    { id:"swap",         name:"Değişim",             effect:"Rastgele 2 taş yer değiştirir",      activatesAfter:0, duration:2 },
-    { id:"blitz",        name:"KUMAR!!!!",            effect:"Rastgele(piece) seçersin eğer kralın seçilirse kazanırsın yoksa seçilen taş ölür",              activatesAfter:1, duration:1 },
-    { id:"fortify",      name:"Spor salonu",          effect:"Rastgele boş bir kare GYM olur oraya giden her taş kale olur.", activatesAfter:0, duration:3 },
-    { id:"plague",       name:"Wololo",           effect:"Fillerin 1 veya 2 kare mesafe uzak taşları senin tarafına çevirir.",    activatesAfter:0, duration:2 },
-    { id:"oracle",       name:"Köylü Miletin Efendisidir!",           effect:"Piyonlar Şah gibi hareket edebilir.",         activatesAfter:0, duration:4 },
-    { id:"teleport",     name:"Hain",         effect:"Oyuncuların en düşük değerli taşı kötü(rakip tarafındanda kontrol edilebilir.) olur.",            activatesAfter:0, duration:3 },
-    { id:"mirror",       name:"Portal",           effect:"2 Tane portal açılır taşlar hareketini portaldan devam ettirebilir. Taşlar Portal üzerinde duramaz.",        activatesAfter:0, duration:3 },
-    { id:"slow",         name:"Tatil günü",       effect:"Sadece piyonlar hareket edebilir",        activatesAfter:0, duration:2 },
-    { id:"reinforce",    name:"Kastamonu",        effect:"Boş bir kare Kastamonu seçilir 2 Kastamonu karesi tutan oyuncu her tur eksta hamle hakkı kazanır.",         activatesAfter:0, duration:10 },
-    { id:"hex",          name:"Duvar",              effect:"Yıkılamaz tarafsız bir kale boş bir kareye çağrılır",      activatesAfter:1, duration:1 },
-    { id:"bloodlust",    name:"Kombo",        effect:"her yenilen taş yiyen taş için ekstra hamle hakkı kazandırır.", activatesAfter:0, duration:2 },
-    { id:"cloak",        name:"Demokrasi",            effect:"Piyonlarından biri Şah olur Bu güç bitiğinde 2 şahın varsa 1 tanesi tekrar piyon olur.",activatesAfter:0, duration:3 },
-    { id:"timewarp",     name:"Pazartesi",        effect:"Her taş sadece 1 kare hareket edebilir",                 activatesAfter:0, duration:3 },
-    { id:"adrenaline",   name:"Kör sinir",       effect:"Eğer bir taş yiyebiliyorsan yemek zorundasın.",        activatesAfter:0, duration:2 },
-    { id:"earthquake",   name:"Bomba",       effect:"Bir taşa bomba bağlanır.Bomba 3X3 Bir alanda patlar ve etrafındakı taşları 'yok eder'.",      activatesAfter:3, duration:3 },
+    { id:"double_move",  name:"Double Move",     effect:"Take two moves next turn instead of one",        activatesAfter:0, duration:1 },
+    { id:"shield",       name:"Shield",           effect:"Your pieces cannot be captured this turn",       activatesAfter:0, duration:1 },
+    { id:"ghost",        name:"Ghost",            effect:"One of your pieces can pass through others",     activatesAfter:0, duration:2 },
+    { id:"freeze",       name:"Freeze",           effect:"One enemy piece cannot move for 2 turns",       activatesAfter:1, duration:2 },
+    { id:"resurrect",    name:"Resurrect",        effect:"Bring back a captured pawn",                    activatesAfter:1, duration:1 },
+    { id:"swap",         name:"Swap",             effect:"Swap any two of your pieces on the board",      activatesAfter:0, duration:1 },
+    { id:"blitz",        name:"Blitz",            effect:"Move any piece twice in one turn",              activatesAfter:0, duration:1 },
+    { id:"fortify",      name:"Fortify",          effect:"A chosen piece cannot be captured for 3 turns", activatesAfter:0, duration:3 },
+    { id:"plague",       name:"Plague",           effect:"Enemy pieces adjacent to yours lose 1 move",    activatesAfter:1, duration:2 },
+    { id:"oracle",       name:"Oracle",           effect:"See your opponent's next planned move",         activatesAfter:0, duration:1 },
+    { id:"teleport",     name:"Teleport",         effect:"Move one piece to any empty square",            activatesAfter:0, duration:1 },
+    { id:"mirror",       name:"Mirror",           effect:"Copy the last power your opponent used",        activatesAfter:0, duration:1 },
+    { id:"slow",         name:"Slow Field",       effect:"Opponent can only move pawns next turn",        activatesAfter:1, duration:1 },
+    { id:"reinforce",    name:"Reinforce",        effect:"Add an extra pawn to any empty square",         activatesAfter:0, duration:1 },
+    { id:"hex",          name:"Hex",              effect:"One enemy piece moves randomly next turn",      activatesAfter:1, duration:1 },
+    { id:"bloodlust",    name:"Bloodlust",        effect:"Captured pieces grant +1 extra move this turn", activatesAfter:0, duration:2 },
+    { id:"cloak",        name:"Cloak",            effect:"Your back row is hidden from opponent",         activatesAfter:0, duration:2 },
+    { id:"timewarp",     name:"Time Warp",        effect:"Undo the opponent's last move",                 activatesAfter:0, duration:1 },
+    { id:"adrenaline",   name:"Adrenaline",       effect:"Your king can move 2 squares this turn",        activatesAfter:0, duration:1 },
+    { id:"earthquake",   name:"Earthquake",       effect:"All pawns on rank 4 and 5 are displaced",      activatesAfter:1, duration:1 },
+    // ↓ Add your own powers here ↓
 ];
 
 function getThreeRandomPowers(){
@@ -684,7 +721,6 @@ function pickPower(power, player){
 
 function tickPowers(justMovedPlayer){
     activePowers.forEach(p => {
-        if(p.owner !== justMovedPlayer) return;
         if(p.turnsUntilActive > 0) p.turnsUntilActive--;
         else p.turnsRemaining--;
     });
@@ -722,6 +758,9 @@ function drawPowerSidebar(){
         });
     });
 }
+
+// ── Color Effect Picker ───────────────────────────────────────────────────────
+
 const EFFECT_COLORS = [
     { name:"Red",    hex:"#ff2222" },
     { name:"Orange", hex:"#ff8800" },
@@ -787,6 +826,8 @@ function selectColor(hex){
     }, 150);
 }
 
+// ── Tile Effect Picker ────────────────────────────────────────────────────────
+
 function openTileEffectPicker(){
     document.getElementById("pickerOverlay").style.display = "block";
     document.getElementById("effectPicker").style.display  = "block";
@@ -807,6 +848,9 @@ function selectTileColor(hex){
         document.getElementById("effectPicker").style.display  = "none";
     }, 150);
 }
+
+// ── Piece Picker ──────────────────────────────────────────────────────────────
+
 function buildPicker(){
     function makeBtn(code){
         let btn = document.createElement("div");
@@ -851,7 +895,10 @@ function selectPickerPiece(code){
         document.getElementById("piecePicker").style.display   = "none";
     }, 200);
 }
-let extraTurnPendingLocal = false;
+
+// ── Extra Turn ────────────────────────────────────────────────────────────────
+
+let extraTurnPendingLocal = false; // local copy to avoid loop
 
 function grantExtraTurn(){
     extraTurnPending = !extraTurnPending;
@@ -871,6 +918,7 @@ function grantExtraTurn(){
     pushState();
 }
 
+// ── Random Square Pickers ─────────────────────────────────────────────────────
 
 function pickRandomSquare(type){
     let candidates = [];
@@ -888,6 +936,7 @@ function pickRandomSquare(type){
     }
 }
 
+// ── Mode Buttons ──────────────────────────────────────────────────────────────
 
 function setModeBtn(active){
     ["btnAdd","btnRemove","btnEffect","btnTileEffect"].forEach(id => {
@@ -905,6 +954,7 @@ function setMode(m){
     if(m === "effect") setModeBtn("effect");
 }
 
+// ── Board ─────────────────────────────────────────────────────────────────────
 
 function drawBoard(){
     let board = document.getElementById("board");
@@ -912,6 +962,10 @@ function drawBoard(){
     for(let i = 0; i < 64; i++){
         let square = document.createElement("div");
         square.className = "square";
+        // Chess.com style alternating squares
+        let row = Math.floor(i / 8);
+        let col = i % 8;
+        square.classList.add((row + col) % 2 === 0 ? "light" : "dark");
         if(i === selected) square.classList.add("selected");
         if(tileEffects.has(i)){
             square.classList.add("tile-effect");
@@ -933,6 +987,7 @@ function drawBoard(){
     document.getElementById("turn").innerText = `Current Turn: ${turn}`;
 }
 
+// ── Click Handler ─────────────────────────────────────────────────────────────
 
 function clickSquare(i){
 
@@ -971,6 +1026,7 @@ function clickSquare(i){
         return;
     }
 
+    // Move mode
     if(selected === null){
         if(pieces[i] !== ""){ selected = i; drawBoard(); }
     } else {
@@ -1009,6 +1065,8 @@ function clickSquare(i){
     }
 }
 
+// ── Reset ─────────────────────────────────────────────────────────────────────
+
 document.getElementById("resetBtn").onclick = () => {
     pieces = [
         "Br","Bn","Bb","Bq","Bk","Bb","Bn","Br",
@@ -1037,6 +1095,8 @@ document.getElementById("resetBtn").onclick = () => {
     drawPowerSidebar();
     pushState();
 };
+
+// ── Init ──────────────────────────────────────────────────────────────────────
 
 buildEffectPicker();
 buildPicker();
